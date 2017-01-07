@@ -554,7 +554,7 @@ public class mazerush extends JFrame {
 				AnimationFrame = 0;
 
 			if((AnimationFrame % (AnimationSpeed*2)) == 0) {
-				File footsteps = new File("footstep1.wav");
+				File footsteps = new File("footstep3.wav");
 				try {
 					sampleplayback(footsteps);
 				} catch (IOException e1) {
@@ -1004,7 +1004,7 @@ public class mazerush extends JFrame {
 		    private boolean done = false;
 		    @Override public synchronized void update(LineEvent event) {
 		      javax.sound.sampled.LineEvent.Type eventType = event.getType();
-		      if (eventType == javax.sound.sampled.LineEvent.Type.STOP || eventType == javax.sound.sampled.LineEvent.Type.CLOSE) {
+		      if (eventType == javax.sound.sampled.LineEvent.Type.STOP) {// || eventType == javax.sound.sampled.LineEvent.Type.CLOSE) {
 		        done = true;
 		        notifyAll();
 		      }
@@ -1028,6 +1028,7 @@ public class mazerush extends JFrame {
 					clip.open(ais);
 					clip.start();
 					listener.waitUntilDone();
+					clip.removeLineListener(listener);
 					clip.close();
 					ais.close();
 				}
