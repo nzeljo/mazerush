@@ -216,11 +216,15 @@ public class mazerush extends JFrame {
 		player.player_center_h = player_height /2;
 		current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player);
 		long completed_delay = 0;
-		maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
-		int maze_pixel_width = maze_img.getWidth();
-		int maze_pixel_height = maze_img.getHeight();
-
-		while( true ) 
+		int maze_pixel_width = 0;
+		int maze_pixel_height =0;
+		if(current_maze >= 0) {
+			maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
+			maze_pixel_width = maze_img.getWidth();
+			maze_pixel_height = maze_img.getHeight();
+		}
+		
+		while( current_maze >= 0 ) 
 		{
 	
 		
@@ -306,11 +310,15 @@ public class mazerush extends JFrame {
 					player.player_center_w = player_width /2;
 					player.player_center_h = player_height /2;
 					current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player);
-					maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
-					maze_x=0;
-					maze_y=0;
-					player_x = maze_zoom;   //FRAME_WIDTH/2 + 10, //this is ugly and not maintainable
-					player_y = maze_zoom; //F
+					if(current_maze >= 0){
+						maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
+						maze_x=0;
+						maze_y=0;
+						player_x = maze_zoom;   //FRAME_WIDTH/2 + 10, //this is ugly and not maintainable
+						player_y = maze_zoom; //F
+					}
+					else break;
+					
 				}
 				if( keyboard.keyDownOnce( KeyEvent.VK_ENTER ) ) {
 					if(current_maze < mazecount - 1) current_maze++;
@@ -956,7 +964,10 @@ public class mazerush extends JFrame {
 			//System.out.println(listlocation);
 		}
 		System.out.println("exited mazeselect");
-		return(listlocation);
+		if(keyboard.keyDown( KeyEvent.VK_ENTER))
+			return(listlocation);
+		else
+			return(-1);
 	}
 	
 	public static int mazeselectkeycheck(KeyboardInput keyboard){
