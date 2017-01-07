@@ -1,0 +1,30 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f91f66c0db4, pid=4999, tid=140264679884544
+#
+# JRE version: Java(TM) SE Runtime Environment (7.0_80-b15) (build 1.7.0_80-b15)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (24.80-b11 mixed mode linux-amd64 compressed oops)
+# Problematic frame:
+# C  [libjdwp.so+0x26db4]  jvmtiAllocate+0x34
+#
+# Failed to write core dump. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.java.com/bugreport/crash.jsp
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007f91d0001000):  JavaThread "JDWP Command Reader" daemon [_thread_in_native, id=5017, stack(0x00007f91ea5b4000,0x00007f91ea6b5000)]
+
+siginfo:si_signo=SIGSEGV: si_errno=0, si_code=1 (SEGV_MAPERR), si_addr=0x0000000000000000
+
+Registers:
+RAX=0x00007f91f68d39c0, RBX=0x00000000000000ca, RCX=0x0000000000000022, RDX=0x00007f91ea6b3830
+RSP=0x00007f91ea6b3810, RBP=0x00007f91ea6b3840, RSI=0x0000000000000022, RDI=0x0000000000000000
+R8 =0x000000000000000e, R9 =0x0000000074706972, R10=0x00007f91ea6b3610, R11=0x00007f91f88813f0
+R12=0x00007f91ea8b99d1, R13=0x00007f91ea6b3850, R14=0x00000000000003d8, R15=0x00007f91d0001d38
+RIP=0x00007f91f66c0db4

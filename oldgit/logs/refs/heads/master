@@ -1,0 +1,7 @@
+0000000000000000000000000000000000000000 cbaab83f504600eac8919dd2eda1ad763268dc7a Your Name <you@example.com> 1477095882 -0600	commit (initial): firstcommit
+cbaab83f504600eac8919dd2eda1ad763268dc7a c8d863373c15487be93542fd2b1b7d52bf9602da Your Name <you@example.com> 1477103191 -0600	commit: secondcommit
+c8d863373c15487be93542fd2b1b7d52bf9602da bb3923d2aef2f96bbfb062ac798e49b9a26999c2 Your Name <you@example.com> 1478309799 -0600	commit: v1.0
+bb3923d2aef2f96bbfb062ac798e49b9a26999c2 678c88d2ac35507bf027c8721159582a6fe0e5ed Your Name <you@example.com> 1478920612 -0700	commit: added splash screen
+678c88d2ac35507bf027c8721159582a6fe0e5ed 6da2b8ef1057e250d84d9813cb83d2ad92d464c1 Your Name <you@example.com> 1480731031 -0700	commit: splashscreen
+6da2b8ef1057e250d84d9813cb83d2ad92d464c1 4c8b8e0551b92ddb50358fc5fa27e3286b74a02d Your Name <you@example.com> 1481340281 -0700	commit: mazeselect
+4c8b8e0551b92ddb50358fc5fa27e3286b74a02d b32214c65c79811c02e5b56b54e88e5a884e1d0b Your Name <you@example.com> 1481944459 -0700	commit: mazeselect with highscores
