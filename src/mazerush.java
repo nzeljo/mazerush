@@ -209,185 +209,135 @@ public class mazerush extends JFrame {
 		// KERNAL
 		// KERNAL
 		// KERNAL
-		player.spritesheet = player_spritesheet;
-		player.player_width = spritesheet_player_width * 2;
-		player.player_height = spritesheet_player_height * 2;
-		player.player_center_w = player_width /2;
-		player.player_center_h = player_height /2;
-		current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player);
-		long completed_delay = 0;
-		int maze_pixel_width = 0;
-		int maze_pixel_height =0;
-		if(current_maze >= 0) {
-			maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
-			maze_pixel_width = maze_img.getWidth();
-			maze_pixel_height = maze_img.getHeight();
-		}
-		
-		while( current_maze >= 0 ) 
-		{
-	
-		
-			try {	//game kernal follows
-				// Draw maze and player
-				graphics = buffer.getDrawGraphics();
-				graphics.drawImage(maze_img, maze_x, maze_y , maze_pixel_width*maze_zoom, maze_pixel_height*maze_zoom, null);
-				draw_player (player_x, player_y, player_spritesheet, graphics, spritesheet_player_width, spritesheet_player_height, maze_img, maze_pixel_width, maze_pixel_height, false);
-			//	if(player_moving)
-			//	AnimationFrame += 1;
-			//	if(AnimationFrame > MaxAnimationFrames)
-			//	AnimationFrame = 0;
-			
-			//	int px = (player_x  - maze_x) /maze_zoom;
-			//	int py = (player_y  - maze_y) /maze_zoom;
-			//	int pixel=maze_img.getRGB(px,py);
-				// graphics.drawString(String.format("color: %h    ", pixel), 10, 10);
-				if(player_on_green(0,0,maze_img, maze_pixel_width, maze_pixel_height))
-					starttime = System.currentTimeMillis();
-				if(!maze_completed)
-					completedtime = System.currentTimeMillis() - starttime;
-				graphics.setFont(myFont);
-				graphics.setColor(Color.white);
-				graphics.fillRect(5, 20, 185, 25);
-				graphics.setColor(Color.black);
-				graphics.drawString(String.format("Time: %d.%02d", completedtime / 1000, completedtime % 1000), 10, 40);
-				
-			//	graphics.drawString(String.format("Time: %l$tM:%l$tS.%l$tL", completedtime), 10, 10);
-				// Blit image and flip...
-				if(player_on_red(0, 0, maze_img, maze_pixel_width, maze_pixel_height) && !maze_completed) {
-					completed_delay = System.currentTimeMillis() + 2 * 500;
-					maze_completed = true;
-					try {
-						sampleplayback(fanfare);
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (UnsupportedAudioFileException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (LineUnavailableException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (InterruptedException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+		while(current_maze>=0){
+			player.spritesheet = player_spritesheet;
+			player.player_width = spritesheet_player_width * 2;
+			player.player_height = spritesheet_player_height * 2;
+			player.player_center_w = player_width /2;
+			player.player_center_h = player_height /2;
+			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze);
+			long completed_delay = 0;
+			int maze_pixel_width = 0;
+			int maze_pixel_height =0;
+			if(current_maze >= 0) {
+				maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
+				maze_pixel_width = maze_img.getWidth();
+				maze_pixel_height = maze_img.getHeight();
+			}
+			while( current_maze >= 0 ) 
+			{
+
+
+				try {	//game kernal follows
+					// Draw maze and player
+					graphics = buffer.getDrawGraphics();
+					graphics.drawImage(maze_img, maze_x, maze_y , maze_pixel_width*maze_zoom, maze_pixel_height*maze_zoom, null);
+					draw_player (player_x, player_y, player_spritesheet, graphics, spritesheet_player_width, spritesheet_player_height, maze_img, maze_pixel_width, maze_pixel_height, false);
+					//	if(player_moving)
+					//	AnimationFrame += 1;
+					//	if(AnimationFrame > MaxAnimationFrames)
+					//	AnimationFrame = 0;
+
+					//	int px = (player_x  - maze_x) /maze_zoom;
+					//	int py = (player_y  - maze_y) /maze_zoom;
+					//	int pixel=maze_img.getRGB(px,py);
+					// graphics.drawString(String.format("color: %h    ", pixel), 10, 10);
+					if(player_on_green(0,0,maze_img, maze_pixel_width, maze_pixel_height))
+						starttime = System.currentTimeMillis();
+					if(!maze_completed)
+						completedtime = System.currentTimeMillis() - starttime;
+					graphics.setFont(myFont);
+					graphics.setColor(Color.white);
+					graphics.fillRect(5, 20, 185, 25);
+					graphics.setColor(Color.black);
+					graphics.drawString(String.format("Time: %d.%02d", completedtime / 1000, completedtime % 1000), 10, 40);
+
+					//	graphics.drawString(String.format("Time: %l$tM:%l$tS.%l$tL", completedtime), 10, 10);
+					// Blit image and flip...
+					if(player_on_red(0, 0, maze_img, maze_pixel_width, maze_pixel_height) && !maze_completed) {
+						completed_delay = System.currentTimeMillis() + 2 * 500;
+						maze_completed = true;
+						try {
+							sampleplayback(fanfare);
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						} catch (UnsupportedAudioFileException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						} catch (LineUnavailableException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						} catch (InterruptedException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
 					}
-				}
-			//	if(maze_completed) { //<- This line removes delay but freezes player
-				if(maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { //<- This line requires you to go on red and then go off of it again
-					completed_delay=0;
+					//	if(maze_completed) { //<- This line removes delay but freezes player
+					if(maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { //<- This line requires you to go on red and then go off of it again
+						completed_delay=0;
+
+						try {
+
+							Thread.sleep(2000); //transition pause
+									
+						} 
+						catch (InterruptedException e) {
+
+						}
+						if (check_if_highscore(completedtime, scorearray)) {
+							String initials = enter_highscores(player_spritesheet, graphics, buffer, spritesheet_player_width, spritesheet_player_height, completedtime);
+							scorearray[9] = completedtime;
+							initialarray[9] = initials;
+							sorthighscores(scorearray, initialarray);
+							savehighscores(mazelist.get(current_maze).toString(), scorearray, initialarray);
+							hstime = System.currentTimeMillis();
+						}
+						maze_completed=false;
+						break;
+					}
+					if(keyboard.keyDownOnce( KeyEvent.VK_BACK_SPACE)) break;
+					if( !buffer.contentsLost() )
+
+						buffer.show();
+
+					// Poll the keyboard
+					keyboard.poll();
+
+					// Should we exit?
+					if( keyboard.keyDownOnce( KeyEvent.VK_ESCAPE ) ) {
+						current_maze = -1;
+						break;
+					}
+					// originally:   Let the OS have a little time...
 
 					try {
 
-						Thread.sleep(2000);
+						Thread.sleep(KernalSleepTime);
 
 					} 
 					catch (InterruptedException e) {
 
 					}
-					if (check_if_highscore(completedtime, scorearray)) {
-						String initials = enter_highscores(player_spritesheet, graphics, buffer, spritesheet_player_width, spritesheet_player_height, completedtime);
-						scorearray[9] = completedtime;
-						initialarray[9] = initials;
-						sorthighscores(scorearray, initialarray);
-						savehighscores(mazelist.get(current_maze).toString(), scorearray, initialarray);
-						hstime = System.currentTimeMillis();
-					}
-						/*int x=530;
- 					hstime = System.currentTimeMillis();
-					while(System.currentTimeMillis() - hstime < 5000) {
-						if (
-								(System.currentTimeMillis()/200) % 2==0)
-							graphics.drawString(String.format("YOU WIN!"), x, 425);
-							x--;
-							buffer.show();
-					}*/
-					maze_completed=false;
-			//		current_maze++;
-					player.spritesheet = player_spritesheet;
-					player.player_width = spritesheet_player_width * 2;
-					player.player_height = spritesheet_player_height * 2;
-					player.player_center_w = player_width /2;
-					player.player_center_h = player_height /2;
-					current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player);
-					if(current_maze >= 0){
-						maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
-						maze_x=0;
-						maze_y=0;
-						player_x = maze_zoom;   //FRAME_WIDTH/2 + 10, //this is ugly and not maintainable
-						player_y = maze_zoom; //F
-					}
-					else break;
-					
-				}
-				if( keyboard.keyDownOnce( KeyEvent.VK_ENTER ) ) {
-					if(current_maze < mazecount - 1) current_maze++;
-					hstime = System.currentTimeMillis();
-					maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
-					maze_x=0;
-					maze_y=0;
-					player_x = maze_zoom;   //FRAME_WIDTH/2 + 10, //this is ugly and not maintainable
-					player_y = maze_zoom; //F
-				}
-				if( keyboard.keyDownOnce( KeyEvent.VK_BACK_SPACE ) ) {
-					player.spritesheet = player_spritesheet;
-					player.player_width = spritesheet_player_width * 2;
-					player.player_height = spritesheet_player_height * 2;
-					player.player_center_w = player_width /2;
-					player.player_center_h = player_height /2;
-					current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player);
-			//		if(current_maze > 0) current_maze--;
-					hstime = System.currentTimeMillis();
-					maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
-					maze_x=0;
-					maze_y=0;
-					player_x = maze_zoom;   //FRAME_WIDTH/2 + 10, //this is ugly and not maintainable
-					player_y = maze_zoom; //F
 				}
 
-				//graphics = buffer.getDrawGraphics();
+				//Game win loop *****************
 
-				//graphics.drawImage( bi, 0, 0, null );
 
-				if( !buffer.contentsLost() )
+				finally {
+					// Release resources
 
-					buffer.show();
+					if( graphics != null ) 
 
-				// Poll the keyboard
-				keyboard.poll();
+						graphics.dispose();
 
-				// Should we exit?
-				if( keyboard.keyDownOnce( KeyEvent.VK_ESCAPE ) )
-					break;
+					if( g2d != null ) 
 
-				// originally:   Let the OS have a little time...
-
-				try {
-
-					Thread.sleep(KernalSleepTime);
-
-				} 
-				catch (InterruptedException e) {
+						g2d.dispose();
 
 				}
-			}
-
-			//Game win loop *****************
-			
-				
-			finally {
-				// Release resources
-
-				if( graphics != null ) 
-
-					graphics.dispose();
-
-				if( g2d != null ) 
-
-					g2d.dispose();
 
 			}
-
 		}
 
 	}
@@ -899,10 +849,8 @@ public class mazerush extends JFrame {
 		return(mazelist);
 	}
 	
-	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount, Player player) {
+	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount, Player player, int thumbnailzoom, int thumbnailheight) {
 		Font splashFont = new Font("SansSerif", Font.BOLD, 20);
-		int thumbnailzoom = 8;
-		int thumbnailheight = 12;
 		int thumbnailwidth = 16;
 		player.player_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
@@ -924,14 +872,16 @@ public class mazerush extends JFrame {
 			graphics.drawString(mazelist.get(topmaze).toString(), thumbnailwidth * thumbnailzoom + player.player_width, y + mazeimage.getHeight() / 2);
 			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), 0, y, thumbnailwidth * thumbnailzoom, thumbnailheight * thumbnailzoom, null);
 			graphics.drawImage(player_img, player.player_x, player.player_y, player.player_width, player.player_height, null);
-			y += 16*8;
+			y += thumbnailheight*thumbnailzoom;
 			topmaze ++;
 		}
 	}
 	
 	
-	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount, Player player) {
-		int listlocation = 0;
+	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount, Player player, int listlocation) {
+		int thumbnailheight = 16;
+		int thumbnailzoom = 8;
+		int cursory = 0;
 		keyboard.poll();
 		player.AnimationFrame = 0;
 		player.player_direction = 0;
@@ -939,33 +889,43 @@ public class mazerush extends JFrame {
 		player.player_y = 0;		
 		Long[] scorearray = new Long[10];
 		String[] initialarray = new String[10];
+	
 		while(!(keyboard.keyDown( KeyEvent.VK_ENTER ) || keyboard.keyDown( KeyEvent.VK_ESCAPE )))
 		{
 			Graphics graphics = buffer.getDrawGraphics();
 
 			graphics.setColor(Color.BLACK);
 			graphics.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
-			displayMazeThumbs(listlocation, mazelist, graphics, mazecount, player);
+			player.player_y = cursory * thumbnailzoom * thumbnailheight;
+			displayMazeThumbs(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom, thumbnailheight);
 			converthighscores(gethighscoretable(mazelist.get(listlocation).toString()), scorearray, initialarray);
 			displayhighscores(scorearray, initialarray, graphics, FRAME_WIDTH * 3/5, 0);
 			//highlightmaze(listlocation);
 			
 			buffer.show();
-			while(keyboard.poll()) {
-				
+			while(keyboard.poll()) { }
+			while(!keyboard.poll()) { }
+			if( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP )){
+				cursory -= 1;
 			}
-			while(!keyboard.poll()) {
-				
+			if(( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN )) && (listlocation + cursory) < (mazecount-1)) {
+				cursory += 1;
 			}
-			if(( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP )) && listlocation > 0)
-				listlocation--;
-			if(( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN )) && listlocation < mazecount -1)
-				listlocation++;
+			if(cursory > (FRAME_HEIGHT / (thumbnailheight*thumbnailzoom))) {
+				cursory -= 1;
+				if(listlocation < mazecount -1)
+					listlocation++;
+			}
+			if(cursory < 0) {
+				cursory += 1;
+				if(listlocation > 0)
+					listlocation--;
+			}
 			//System.out.println(listlocation);
 		}
 		System.out.println("exited mazeselect");
 		if(keyboard.keyDown( KeyEvent.VK_ENTER))
-			return(listlocation);
+			return(listlocation+cursory);
 		else
 			return(-1);
 	}
@@ -1138,6 +1098,7 @@ public class mazerush extends JFrame {
 
 			}
 		}
+		while(keyboard.poll()){}
 	}
 	public static void main( String[] args ) {
 		mazerush app = new mazerush();
