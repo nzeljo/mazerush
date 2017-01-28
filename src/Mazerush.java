@@ -377,7 +377,7 @@ public class Mazerush extends JFrame {
 				highscore_graphics.setColor(Color.white);
 				highscore_graphics.drawImage(highscore_img, maze_x, maze_y, maze_pixel_width*maze_zoom, maze_pixel_height*maze_zoom, null);
 				//draw high score letters on top of maze
-				for (int i=0;i<32;i++) {
+				for (int i=0;i<34;i++) {
 					
 					highscore_graphics.drawString(hs_chars[i],hs_x_offset + hsletter_x(i),hs_y_offset + hsletter_y(i));
 							
@@ -802,9 +802,8 @@ public class Mazerush extends JFrame {
 		return(mazelist);
 	}
 	
-	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount, Player player, int thumbnailzoom, int thumbnailheight) {
+	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount, Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
 		Font splashFont = new Font("SansSerif", Font.BOLD, 20);
-		int thumbnailwidth = 16;
 		player.player_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
 		int spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
@@ -832,7 +831,9 @@ public class Mazerush extends JFrame {
 	
 	
 	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount, Player player, int listlocation) {
-		int thumbnailheight = 16;
+		int thumbnailheight = FRAME_HEIGHT/maze_zoom;
+	//	int thumbnailheight = 16;
+		int thumbnailwidth = FRAME_WIDTH/maze_zoom;
 		int thumbnailzoom = 8;
 		int cursory = 0;
 		keyboard.poll();
@@ -850,7 +851,7 @@ public class Mazerush extends JFrame {
 			graphics.setColor(Color.BLACK);
 			graphics.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 			player.player_y = cursory * thumbnailzoom * thumbnailheight;
-			displayMazeThumbs(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom, thumbnailheight);
+			displayMazeThumbs(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom, thumbnailheight, thumbnailwidth);
 			converthighscores(gethighscoretable(mazelist.get(listlocation+cursory).toString()), scorearray, initialarray);
 			displayhighscores(scorearray, initialarray, graphics, FRAME_WIDTH * 3/5, 0);
 			//highlightmaze(listlocation);
@@ -864,7 +865,7 @@ public class Mazerush extends JFrame {
 			if(( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN )) && (listlocation + cursory) < (mazecount-1)) {
 				cursory += 1;
 			}
-			if(cursory > (FRAME_HEIGHT / (thumbnailheight*thumbnailzoom))) {
+			if(cursory >= (FRAME_HEIGHT / (thumbnailheight*thumbnailzoom))) {
 				cursory -= 1;
 				if(listlocation < mazecount -1)
 					listlocation++;
@@ -875,12 +876,98 @@ public class Mazerush extends JFrame {
 					listlocation--;
 			}
 		}
-		if(keyboard.keyDown( KeyEvent.VK_ENTER))
+		if(keyboard.keyDown( KeyEvent.VK_ENTER)) {
+			selectTransition3D(buffer, listlocation, cursory, thumbnailzoom, thumbnailheight, thumbnailwidth, mazelist);
 			return(listlocation+cursory);
+		}
 		else
 			return(-1);
 	}
-	
+	public static void selectTransition(BufferStrategy buffer, int listlocation, int cursory, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, JSONArray mazelist) {
+		float tframes = 32;
+		float x1start = 0;
+		float y1start = cursory * thumbnailheight * thumbnailzoom;
+		float x2start = thumbnailwidth * thumbnailzoom;
+		float y2start = y1start + thumbnailheight * thumbnailzoom;
+		float x1end = 0;
+		float y1end = 0;
+		float x2end = FRAME_WIDTH;
+		float y2end = FRAME_HEIGHT;
+		float x1delta = (x1end-x1start)/tframes;
+		float y1delta = (y1end-y1start)/tframes;
+		float x2delta = (x2end-x2start)/tframes;
+		float y2delta = (y2end-y2start)/tframes;
+		float x1 = x1start;
+		float y1 = y1start;
+		float x2 = x2start;
+		float y2 = y2start;
+		BufferedImage mazeimage = null;
+		try {	
+			mazeimage = ImageIO.read(new File(mazelist.get(listlocation+cursory).toString()));	       
+		} catch (IOException e) {
+		}
+		for (int i=1; i < tframes; i++) {
+			Graphics graphics = buffer.getDrawGraphics();
+			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), (int)x1, (int)y1, (int)(x2-x1), (int)(y2-y1), null);
+			x1 += x1delta;
+			y1 += y1delta;
+			x2 += x2delta;
+			y2 += y2delta;
+			buffer.show();		
+			try {
+
+				Thread.sleep(KernalSleepTime);
+
+			} 
+			catch (InterruptedException e) {
+
+			}
+		}
+	}
+	public static void selectTransition3D(BufferStrategy buffer, int listlocation, int cursory, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, JSONArray mazelist) {
+		float taccel = (float)1.07;
+		float x1start = 0;
+		float y1start = cursory * thumbnailheight * thumbnailzoom;
+		float x2start = thumbnailwidth * thumbnailzoom;
+		float y2start = y1start + thumbnailheight * thumbnailzoom;
+		float x1end = 0;
+		float y1end = 0;
+		float x2end = FRAME_WIDTH;
+		float y2end = FRAME_HEIGHT;
+		float x1delta = (x1end-x1start);
+		float y1delta = (y1end-y1start);
+		float x2delta = (x2end-x2start);
+		float y2delta = (y2end-y2start);
+		float x1 = x1start;
+		float y1 = y1start;
+		float x2 = x2start;
+		float y2 = y2start;
+		BufferedImage mazeimage = null;
+		try {	
+			mazeimage = ImageIO.read(new File(mazelist.get(listlocation+cursory).toString()));	       
+		} catch (IOException e) {
+		}
+		float dist = (float)0.01;
+		while (dist < 1) {
+			Graphics graphics = buffer.getDrawGraphics();
+			x1 = x1start+x1delta*dist;
+			y1 = y1start+y1delta*dist;
+			x2 = x2start+x2delta*dist;
+			y2 = y2start+y2delta*dist;
+			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), (int)x1, (int)y1, (int)(x2-x1), (int)(y2-y1), null);
+			
+			buffer.show();		
+			dist *= taccel;
+			try {
+
+				Thread.sleep(KernalSleepTime);
+
+			} 
+			catch (InterruptedException e) {
+
+			}
+		}
+	}
 	public static int mazeselectkeycheck(KeyboardInput keyboard){
 		int keypressed = 0;
 		int left = 1;
