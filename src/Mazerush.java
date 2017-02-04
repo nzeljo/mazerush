@@ -71,7 +71,7 @@ public class Mazerush extends JFrame {
 	spritesheeth = 4,
 	spritesheetv = 4;
 	String hs_chars [] = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-						"-","!",".","\u2B05","\u21B5","?","Highscore!","Enter your initials" };
+						"-","!",".","\u2408","\u21B5","?","Highscore!","Enter your initials" };
 	int hs_chars_xy [][]  = {
 			{3,1},{5,1},{7,1},{9,1},{11,1},
 			{13,3},{13,5},{13,7},{13,9},{13,11},
@@ -138,7 +138,7 @@ public class Mazerush extends JFrame {
 		Player player = new Player();
 		
 		int current_maze=0;
-		File fanfare = new File("fanfare1.wav");
+		File fanfare = new File("resources/fanfare1.wav");
 		
 		JSONArray mazelist = findmazefiles();
 		mazecount = mazelist.size();
@@ -169,7 +169,7 @@ public class Mazerush extends JFrame {
 		int spritesheet_player_width = 0;
 		int spritesheet_player_height = 0;	
 		try {
-			URL player_url = new URL("file:spritesheet6.png");
+			URL player_url = new URL("file:resources/spritesheet6.png");
 			player_spritesheet = ImageIO.read(player_url);
 			 spritesheet_player_width = player_spritesheet.getWidth(null) / spritesheeth;
 			 spritesheet_player_height = player_spritesheet.getHeight(null) / spritesheetv;
@@ -180,7 +180,7 @@ public class Mazerush extends JFrame {
 		} catch (IOException e) {
 		}
 		BufferedImage maze_img = null;
-
+		int lasthighscoreidx = -1;
 		// GAME KERNAL
 		// GAME KERNAL
 		// GAME KERNAL
@@ -195,7 +195,7 @@ public class Mazerush extends JFrame {
 			player.player_height = spritesheet_player_height * 2;
 			player.player_center_w = player_width /2;
 			player.player_center_h = player_height /2;
-			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze);
+			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx);
 			long completed_delay = 0;
 			int maze_pixel_width = 0;
 			int maze_pixel_height =0;
@@ -262,7 +262,8 @@ public class Mazerush extends JFrame {
 							initialarray[9] = initials;
 							sorthighscores(scorearray, initialarray);
 							savehighscores(mazelist.get(current_maze).toString(), scorearray, initialarray);
-							hstime = System.currentTimeMillis();
+							//	hstime = System.currentTimeMillis()
+							lasthighscoreidx = findhighscore(scorearray, initialarray, completedtime, initials);
 						}
 						maze_completed=false;
 						break;
@@ -334,7 +335,7 @@ public class Mazerush extends JFrame {
 		Graphics highscore_graphics=null;
 		BufferedImage highscore_img=null;
 		try {
-			URL url = new URL("file:highscore2.png");
+			URL url = new URL("file:resources/highscore2.png");
 				highscore_img = ImageIO.read(url);
 			} catch (IOException e) {
 			}
@@ -355,7 +356,7 @@ public class Mazerush extends JFrame {
 		String priorletter = null;
 		String hsbuf = null;
 		Font timeFont = new Font("SansSerif", Font.BOLD, 15);
-		String backspace_char =  "\u2B05";
+		String backspace_char =  "\u2408";//changed from back arrow to bs
 		String enter_char =  "\u21B5";
 		Color hsfontcolor = Color.white;
 		Random rnd = new Random();
@@ -473,7 +474,7 @@ public class Mazerush extends JFrame {
 				AnimationFrame = 0;
 
 			if((AnimationFrame % (AnimationSpeed*2)) == 0) {
-				File footsteps = new File("footstep3.wav");
+				File footsteps = new File("resources/footstep3.wav");
 				try {
 					sampleplayback(footsteps);
 				} catch (IOException e1) {
@@ -625,7 +626,7 @@ public class Mazerush extends JFrame {
 		
 		//attempt to write new highscore JSONObject to file highscores.json
 		try {
-			FileWriter file = new FileWriter(maze+".highscore");
+			FileWriter file = new FileWriter("mazes/"+maze+".highscore");
 			file.write(mazehigh.toJSONString());
 			file.flush();
 			file.close();
@@ -638,7 +639,7 @@ public class Mazerush extends JFrame {
 		JSONParser parser = new JSONParser();
 		try {
 			
-			Object obj = parser.parse(new FileReader(maze+".highscore"));
+			Object obj = parser.parse(new FileReader("mazes/"+maze+".highscore"));
 			JSONObject mazehigh = (JSONObject) obj;
 			return(mazehigh);
 
@@ -694,12 +695,20 @@ public class Mazerush extends JFrame {
 			
 		}
 	}
+	public static int findhighscore(Long[] sortedscores, String[] sortedinitials, Long score, String initials) {
+		for (int index=0; index<10; index++ ) {
+			if(sortedscores[index] == score && sortedinitials[index] == initials){
+				return(index);
+			}
+		}
+		return(-1);
+	}
 	public static void sorthighscores(Long[] sortedscores, String[] sortedinitials) {
 		int left = 0;
 		int right = 9;
 		scoreQuickSort(sortedscores, sortedinitials, left, right);
 	}
-	public static void displayhighscores(Long[] sortedscores, String[] sortedinitials, Graphics graphics, int hsx, int hsy) {
+	public static void displayhighscores(Long[] sortedscores, String[] sortedinitials, Graphics graphics, int hsx, int hsy, int lasthighscoreidx) {
 		sorthighscores(sortedscores, sortedinitials);
 		int left = 0;
 		int right = 9;
@@ -715,6 +724,10 @@ public class Mazerush extends JFrame {
 			//String temp =(String)scores.get(index);
 			//long time = Long.parseLong(temp);
 			long time = sortedscores[index];
+			if(index == lasthighscoreidx)
+				graphics.setColor(Color.blue);
+			else
+				graphics.setColor(Color.black);
 			//	graphics.drawString(String.format("%d. %s (%d.%02d)", index + 1, sortedinitials[index], time / 1000, time % 1000 / 10), 430, printy);
 			graphics.drawString(String.format("%d. %s", index + 1, sortedinitials[index]), hsx, printy);
 			graphics.drawString(String.format("(%d.%02d)", time / 1000, time % 1000 / 10), hsx + 86, printy);
@@ -785,8 +798,11 @@ public class Mazerush extends JFrame {
 	public static JSONArray findmazefiles() {
 
 		JSONArray mazelist = new JSONArray();
-
+		
 		Path dir = Paths.get("");
+		dir = dir.resolve("mazes");
+		
+		System.out.format("%s%n",dir.toAbsolutePath());
 		try (DirectoryStream<Path> stream =
 				Files.newDirectoryStream(dir, "*.png")) {
 			for (Path entry: stream) {
@@ -794,11 +810,13 @@ public class Mazerush extends JFrame {
 				
 				if(fname.contains("maze")) {	
 					mazelist.add(fname);
+					
 				}
 			}
 		} catch (IOException x) {
 			System.err.println(x);
 		}
+		System.out.println(mazelist);
 		return(mazelist);
 	}
 	
@@ -816,7 +834,7 @@ public class Mazerush extends JFrame {
 		while(y < FRAME_HEIGHT && topmaze < mazecount) {
 			try {	
 				//System.out.println(mazelist.get(topmaze).toString());
-				mazeimage = ImageIO.read(new File(mazelist.get(topmaze).toString()));	       
+				mazeimage = ImageIO.read(new File("mazes/"+mazelist.get(topmaze).toString()));	       
 			} catch (IOException e) {
 			}
 
@@ -830,7 +848,8 @@ public class Mazerush extends JFrame {
 	}
 	
 	
-	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount, Player player, int listlocation) {
+	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount, Player player, int listlocation, int lasthighscoreidx) {
+		int lastmaze = listlocation; //storing last maze so we can use for highscore highlight
 		int thumbnailheight = FRAME_HEIGHT/maze_zoom;
 	//	int thumbnailheight = 16;
 		int thumbnailwidth = FRAME_WIDTH/maze_zoom;
@@ -853,7 +872,10 @@ public class Mazerush extends JFrame {
 			player.player_y = cursory * thumbnailzoom * thumbnailheight;
 			displayMazeThumbs(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom, thumbnailheight, thumbnailwidth);
 			converthighscores(gethighscoretable(mazelist.get(listlocation+cursory).toString()), scorearray, initialarray);
-			displayhighscores(scorearray, initialarray, graphics, FRAME_WIDTH * 3/5, 0);
+			if((listlocation + cursory) == lastmaze)
+				displayhighscores(scorearray, initialarray, graphics, FRAME_WIDTH * 3/5, 0, lasthighscoreidx);
+			else
+				displayhighscores(scorearray, initialarray, graphics, FRAME_WIDTH * 3/5, 0, -1);
 			//highlightmaze(listlocation);
 			
 			buffer.show();
@@ -903,7 +925,7 @@ public class Mazerush extends JFrame {
 		float y2 = y2start;
 		BufferedImage mazeimage = null;
 		try {	
-			mazeimage = ImageIO.read(new File(mazelist.get(listlocation+cursory).toString()));	       
+			mazeimage = ImageIO.read(new File("mazes/"+mazelist.get(listlocation+cursory).toString()));	       
 		} catch (IOException e) {
 		}
 		for (int i=1; i < tframes; i++) {
@@ -944,7 +966,7 @@ public class Mazerush extends JFrame {
 		float y2 = y2start;
 		BufferedImage mazeimage = null;
 		try {	
-			mazeimage = ImageIO.read(new File(mazelist.get(listlocation+cursory).toString()));	       
+			mazeimage = ImageIO.read(new File("mazes/"+mazelist.get(listlocation+cursory).toString()));	       
 		} catch (IOException e) {
 		}
 		float dist = (float)0.01;
@@ -995,7 +1017,7 @@ public class Mazerush extends JFrame {
 	public static BufferedImage enter_maze(int current_maze, JSONArray mazelist, Long[] scorearray, String[] initialarray) {
 		BufferedImage mazeimage = null;
 		try {	
-			mazeimage = ImageIO.read(new File(mazelist.get(current_maze).toString()));	       
+			mazeimage = ImageIO.read(new File("mazes/"+mazelist.get(current_maze).toString()));	       
 		} catch (IOException e) {
 		}
 		
@@ -1105,14 +1127,14 @@ public class Mazerush extends JFrame {
 		BufferedImage splashimage = null;
 		BufferedImage titleimage = null;
 		try {	
-			splashimage = ImageIO.read(new File("splash2.png"));
+			splashimage = ImageIO.read(new File("resources/splash2.png"));
 			//ClassLoader cl = .getClass().getClassLoader();
 			//InputStream is = getClass( ).getResourceAsStream("splash2.png");
 
 		} catch (IOException e) {
 		}
 		try {	
-			titleimage = ImageIO.read(new File("gametitle.png"));	       
+			titleimage = ImageIO.read(new File("resources/gametitle.png"));	       
 		} catch (IOException e) {
 		}
 		Graphics graphics = buffer.getDrawGraphics();
