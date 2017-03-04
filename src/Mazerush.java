@@ -93,11 +93,7 @@ public class Mazerush extends JFrame {
 	//int player_height = 0;
 	//int player_center_w = 0;
 	//int player_center_h = 0;
-	int	maze_x = 0, maze_y = 0;
-	long starttime = 0;
 	long endtime = 0;
-	long completedtime = 0;
-	boolean maze_completed = false;
 //	int AnimationFrame = -1;
 	int attracths = 5000;
 	int splashtimeonscreen = 20000;
@@ -131,7 +127,17 @@ public class Mazerush extends JFrame {
 		int player_center_w = 0;
 		int player_center_h = 0;
 		int AnimationFrame = -1;
+		boolean maze_completed = false;
+		long completedtime = 0;
+		long starttime = 0;
 	}
+	class Maze {
+		BufferedImage maze_img;
+		int maze_pixel_width;
+		int maze_pixel_height;
+		int maze_x;
+		int maze_y;
+		}
 	
 	public void run() {
 		
@@ -179,15 +185,16 @@ public class Mazerush extends JFrame {
 			 player.player_center_h = player.player_height /2;
 		} catch (IOException e) {
 		}
-		BufferedImage maze_img = null;
+		Maze maze = new Maze();
+		boolean fanfareplaying = false;
 		int lasthighscoreidx = -1;
 		// GAME KERNAL
 		// GAME KERNAL
 		// GAME KERNAL
 		while(current_maze>=0){
 
-			maze_x = 0;
-			maze_y = 0;
+			maze.maze_x = 0;
+			maze.maze_y = 0;
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx);
 			long completed_delay = 0;
 			int maze_pixel_width = 0;
@@ -198,54 +205,34 @@ public class Mazerush extends JFrame {
 				player.player_direction = 0;
 				player.player_dx = player.player_dy = maze_zoom/8;
 				player.AnimationFrame = 0;
-				maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
-				maze_pixel_width = maze_img.getWidth();
-				maze_pixel_height = maze_img.getHeight();
+				maze.maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
+				maze_pixel_width = maze.maze_img.getWidth();
+				maze_pixel_height = maze.maze_img.getHeight();
+				fanfareplaying = false;
 			}
 			while( current_maze >= 0 ) 
 			{
 				try {	//inner kernel loop starts here
-					// Draw maze and player
-					backbuffer = buffer.getDrawGraphics(); //DRAW
-					backbuffer.drawImage(maze_img, maze_x, maze_y , maze_pixel_width*maze_zoom, maze_pixel_height*maze_zoom, null); //DRAW
+	
+					player = update_objects(maze, player);
 
-					player = update_player (maze_img, maze_pixel_width, maze_pixel_height, false, player); 
-
-					draw_player (player, backbuffer, maze_img, maze_pixel_width, maze_pixel_height);
-					if(player_on_green(0,0,maze_img, maze_pixel_width, maze_pixel_height, player))
-						starttime = System.currentTimeMillis();
-					if(!maze_completed)
-						completedtime = System.currentTimeMillis() - starttime;
-					Font timeFont = new Font("SansSerif", Font.BOLD, 20); //DRAW
-					backbuffer.setFont(timeFont); //DRAW
-					backbuffer.setColor(Color.white); //DRAW
-					backbuffer.fillRect(5, 20, 185, 25); //DRAW
-					backbuffer.setColor(Color.black); //DRAW
-					backbuffer.drawString(String.format("Time: %d.%02d", completedtime / 1000, completedtime % 1000), 10, 40); //DRAW
-
-					//	backbuffer.drawString(String.format("Time: %l$tM:%l$tS.%l$tL", completedtime), 10, 10);
-					// Blit image and flip...
-					if(player_on_red(0, 0, maze_img, maze_pixel_width, maze_pixel_height, player) && !maze_completed) {
+		
+					if(player.maze_completed && !fanfareplaying) { 
 						completed_delay = System.currentTimeMillis() + 2 * 500;
-						maze_completed = true;
+						fanfareplaying = true;
 						try {
 							sampleplayback(fanfare);
 						} catch (IOException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						} catch (UnsupportedAudioFileException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						} catch (LineUnavailableException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						} catch (InterruptedException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
 					}
-					//	if(maze_completed) { //<- This line removes delay but freezes player
-					if(maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { //<- This line requires you to go on red and then go off of it again
+					if(player.maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { //<- This line requires you to go on red and then go off of it again
 						completed_delay=0;
 
 						try {
@@ -256,19 +243,33 @@ public class Mazerush extends JFrame {
 						catch (InterruptedException e) {
 
 						}
-						if (check_if_highscore(completedtime, scorearray)) {
-							String initials = enter_highscores(backbuffer, buffer, spritesheet_player_width, spritesheet_player_height, completedtime, player);
-							scorearray[9] = completedtime;
+						if (check_if_highscore(player.completedtime, scorearray)) {
+							String initials = enter_highscores(backbuffer, buffer, spritesheet_player_width, spritesheet_player_height, player);
+							scorearray[9] = player.completedtime;
 							initialarray[9] = initials;
 							sorthighscores(scorearray, initialarray);
 							savehighscores(mazelist.get(current_maze).toString(), scorearray, initialarray);
 							//	hstime = System.currentTimeMillis()
-							lasthighscoreidx = findhighscore(scorearray, initialarray, completedtime, initials);
+							lasthighscoreidx = findhighscore(scorearray, initialarray, player.completedtime, initials);
 						}
-						maze_completed=false;
+						player.maze_completed=false;
 						break;
 					}
 					if(keyboard.keyDownOnce( KeyEvent.VK_BACK_SPACE)) break;
+					//------------------------------------------------------------------------------------------------
+					//UPDATE GRAPHICS
+					//------------------------------------------------------------------------------------------------
+					backbuffer = buffer.getDrawGraphics(); //DRAW
+					backbuffer.drawImage(maze.maze_img, maze.maze_x, maze.maze_y , maze_pixel_width*maze_zoom, maze_pixel_height*maze_zoom, null); //DRAW
+					draw_player (backbuffer, maze, player);
+					Font timeFont = new Font("SansSerif", Font.BOLD, 20); //DRAW
+					backbuffer.setFont(timeFont); //DRAW
+					backbuffer.setColor(Color.white); //DRAW
+					backbuffer.fillRect(5, 20, 185, 25); //DRAW
+					backbuffer.setColor(Color.black); //DRAW
+					backbuffer.drawString(String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000), 10, 40); //DRAW //TODO move to other side of screen if player is on top of it
+					if( !buffer.contentsLost() )  buffer.show();
+
 					if( !buffer.contentsLost() )
 
 						buffer.show();
@@ -313,36 +314,64 @@ public class Mazerush extends JFrame {
 		}
 
 	}
+	
+	
+	
+	
+	
+
+	public Player update_objects(Maze maze, Player player){
+		player = update_player (false, maze, player); 
+
+		
+		if(player_on_green(0,0, maze, player))
+			player.starttime = System.currentTimeMillis();
+		if(!player.maze_completed)
+			player.completedtime = System.currentTimeMillis() - player.starttime;
+
+
+		//	backbuffer.drawString(String.format("Time: %l$tM:%l$tS.%l$tL", completedtime), 10, 10);
+		// Blit image and flip...
+		if(player_on_red(0, 0, maze, player) && !player.maze_completed) {
+			player.maze_completed = true;
+		
+		}
+		// Poll the keyboard
+		keyboard.poll();
+		if(!player.maze_completed)
+			player.completedtime = System.currentTimeMillis() - player.starttime;
+		return(player);
+	}
 	public boolean switchmaze(int currentmaze) {
 		return(true);
 	}
 	//Checking if touching letters
-	public String player_touching_letter(int hs_x_offset, int hs_y_offset, Player player){
+	public String player_touching_letter(int hs_x_offset, int hs_y_offset, Maze maze, Player player){
 		for(int check=0; check<32; check++) {
-			if ( Math.abs( player.player_x - (hsletter_x(check) + hs_x_offset)) < touching_distance && 
-					Math.abs( player.player_y - (hsletter_y(check) + hs_y_offset)) < touching_distance  )
+			if ( Math.abs( player.player_x - (hsletter_x(check, maze) + hs_x_offset)) < touching_distance && 
+					Math.abs( player.player_y - (hsletter_y(check, maze) + hs_y_offset)) < touching_distance  )
 				return(hs_chars[check]);
 		}
 		return(null);
 	}
 	public int touching_distance = maze_zoom / 3;
-	public int hsletter_x(int i) {return ( maze_x + hs_chars_xy[i][0] * maze_zoom);}
-	public int hsletter_y(int i) {return ( maze_y + hs_chars_xy[i][1]* maze_zoom);}
+	public int hsletter_x(int i, Maze maze) {return ( maze.maze_x + hs_chars_xy[i][0] * maze_zoom);}
+	public int hsletter_y(int i, Maze maze) {return ( maze.maze_y + hs_chars_xy[i][1]* maze_zoom);}
 
-	public String enter_highscores(Graphics background_graphics, BufferStrategy buffer, int spritesheet_player_width, int spritesheet_player_height, long completedtime, Player player){
+	public String enter_highscores(Graphics background_graphics, BufferStrategy buffer, int spritesheet_player_width, int spritesheet_player_height, Player player){
 		int highscore_enter_delay = 3;
 		String initials = null;
 		Graphics highscore_graphics=null;
-		BufferedImage highscore_img=null;
+		Maze hsmaze = new Maze();
 		try {
 			URL url = new URL("file:resources/highscore2.png");
-				highscore_img = ImageIO.read(url);
+				hsmaze.maze_img = ImageIO.read(url);
 			} catch (IOException e) {
 			}
-		int maze_pixel_width=highscore_img.getWidth();
-		int maze_pixel_height=highscore_img.getHeight();
-		maze_x = 0;
-		maze_y = 0;
+		hsmaze.maze_pixel_width=hsmaze.maze_img.getWidth();
+		hsmaze.maze_pixel_height=hsmaze.maze_img.getHeight();
+		hsmaze.maze_x = 0;
+		hsmaze.maze_y = 0;
 		player.player_x = 100;
 		player.player_y = 100;
 		Font hsfont = new Font("SansSerif", Font.BOLD, 30);
@@ -350,8 +379,8 @@ public class Mazerush extends JFrame {
 		int hs_y_offset = maze_zoom - 8;
 		int box_width = maze_zoom * 3;
 		int box_height = maze_zoom + maze_zoom / 2;
-		int hsbox_x = (int) (maze_pixel_width / 2 * maze_zoom - box_width / 2 + maze_zoom / 2);
-		int hsbox_y = (int) (maze_pixel_height / 2 * maze_zoom - box_height / 2);
+		int hsbox_x = (int) (hsmaze.maze_pixel_width / 2 * maze_zoom - box_width / 2 + maze_zoom / 2);
+		int hsbox_y = (int) (hsmaze.maze_pixel_height / 2 * maze_zoom - box_height / 2);
 		Color fillcolor = Color.black; 
 		String priorletter = null;
 		String hsbuf = null;
@@ -376,34 +405,37 @@ public class Mazerush extends JFrame {
 				highscore_graphics.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 				highscore_graphics.setFont(hsfont);
 				highscore_graphics.setColor(Color.white);
-				highscore_graphics.drawImage(highscore_img, maze_x, maze_y, maze_pixel_width*maze_zoom, maze_pixel_height*maze_zoom, null);
+				highscore_graphics.drawImage(hsmaze.maze_img, hsmaze.maze_x, hsmaze.maze_y, hsmaze.maze_pixel_width*maze_zoom, hsmaze.maze_pixel_height*maze_zoom, null);
 				//draw high score letters on top of maze
 				for (int i=0;i<34;i++) {
 					
-					highscore_graphics.drawString(hs_chars[i],hs_x_offset + hsletter_x(i),hs_y_offset + hsletter_y(i));
+					highscore_graphics.drawString(hs_chars[i],hs_x_offset + hsletter_x(i, hsmaze),hs_y_offset + hsletter_y(i, hsmaze));
 							
 				}
 				
 				// drawing highscore box
 				highscore_graphics.setColor(Color.black);
-				highscore_graphics.fillRect(maze_x + hsbox_x, maze_y + hsbox_y, box_width, box_height);
+				highscore_graphics.fillRect(hsmaze.maze_x + hsbox_x, hsmaze.maze_y + hsbox_y, box_width, box_height);
 				highscore_graphics.setColor(hsfontcolor);
 				if (hsbuf != null)
-					highscore_graphics.drawString(hsbuf, maze_x + hsbox_x + hs_x_offset, maze_y + hsbox_y + hs_y_offset);
+					highscore_graphics.drawString(hsbuf, hsmaze.maze_x + hsbox_x + hs_x_offset, hsmaze.maze_y + hsbox_y + hs_y_offset);
 				
 				// draw time
 
 				highscore_graphics.setFont(timeFont);
 				highscore_graphics.setColor(Color.white);
-				highscore_graphics.drawString(String.format("Time: %d.%02d", completedtime / 1000, completedtime % 1000), maze_x + hsbox_x + hs_x_offset + 8, maze_y + hsbox_y + hs_y_offset + maze_zoom / 2);
-				player = update_player (highscore_img, maze_pixel_width, maze_pixel_height, false, player); 
-				draw_player (player, highscore_graphics, highscore_img, maze_pixel_width, maze_pixel_height);
+				highscore_graphics.drawString(String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000), hsmaze.maze_x + hsbox_x + hs_x_offset + 8, hsmaze.maze_y + hsbox_y + hs_y_offset + maze_zoom / 2);
+
+				player = update_player (true, hsmaze, player); 
+				//	public void draw_player (Player player, Graphics backbuffer, BufferedImage maze_img, int maze_pixel_width, int maze_pixel_height) {
+
+				draw_player (highscore_graphics, hsmaze, player);
 				if( !buffer.contentsLost() )
 
 					buffer.show();
 				
 
-				String letter = player_touching_letter(hs_x_offset, hs_y_offset, player);
+				String letter = player_touching_letter(hs_x_offset, hs_y_offset, hsmaze, player);
 				if (letter != null && !highscore_entered && letter != priorletter){
 					if (letter == backspace_char)  {
 						int hssize = hsbuf.length();
@@ -452,11 +484,11 @@ public class Mazerush extends JFrame {
 		initials = hsbuf;
 		return(initials);
 	}
-	public boolean maze_fits_on_screen(int dx, int dy, int maze_pixel_width, int maze_pixel_height){
-		if ((maze_x+dx) > 0) return (false);
-		if ((maze_x+dx+maze_pixel_width*maze_zoom) < FRAME_WIDTH) return (false);
-		if ((maze_y+dy) > 0) return (false);
-		if ((maze_y+dy+maze_pixel_height*maze_zoom) < FRAME_HEIGHT) return (false);
+	public boolean maze_fits_on_screen(int dx, int dy, Maze maze){
+		if ((maze.maze_x+dx) > 0) return (false);
+		if ((maze.maze_x+dx+maze.maze_pixel_width*maze_zoom) < FRAME_WIDTH) return (false);
+		if ((maze.maze_y+dy) > 0) return (false);
+		if ((maze.maze_y+dy+maze.maze_pixel_height*maze_zoom) < FRAME_HEIGHT) return (false);
 		//if ((maze_y - FRAME_HEIGHT+dy) < maze_pixel_height*maze_zoom) return (false);
 		return (true);
 	}
@@ -468,84 +500,86 @@ public class Mazerush extends JFrame {
 		return (true);
 	}
 
-	public void draw_player (Player player, Graphics backbuffer, BufferedImage maze_img, int maze_pixel_width, int maze_pixel_height) {
+	public void draw_player (Graphics backbuffer, Maze maze, Player player) {
 		BufferedImage player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_direction * 16,
 				player.player_width /2, player.player_height/2);
 		backbuffer.drawImage(player_img, player.player_x - player.player_center_w, player.player_y - player.player_center_h , player.player_width, player.player_height, null);
 		//java2s.com/Tutorial/Java/0261__2D-Graphics/
 	}
-	public boolean player_on_path(int dx, int dy, BufferedImage img, int maze_pixel_width, int maze_pixel_height, Player player){
+	//if (player_on_path(0, -player.player_dy, maze, player)) 
+	public boolean player_on_path(int dx, int dy, Maze maze, Player player){
 		
-		int pxright = (player.player_x + dx - maze_x + player.player_center_w) /maze_zoom;
-		int pybottom = (player.player_y + dy - maze_y + player.player_center_h) /maze_zoom;
-		int pxleft = (player.player_x + dx - maze_x - player.player_center_w) /maze_zoom;
-		int pytop = (player.player_y + dy - maze_y - player.player_center_h) /maze_zoom;
+		int pxright = (player.player_x + dx - maze.maze_x + player.player_center_w) /maze_zoom;
+		int pybottom = (player.player_y + dy - maze.maze_y + player.player_center_h) /maze_zoom;
+		int pxleft = (player.player_x + dx - maze.maze_x - player.player_center_w) /maze_zoom;
+		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) /maze_zoom;
 		
-		if (pxright >= maze_pixel_width || pybottom >= maze_pixel_height) // only bottom and right cause outofbounds exception so we just check those
+		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only bottom and right cause outofbounds exception so we just check those
 			return(false);
 		
-			if (img.getRGB(pxleft, pytop) != 0xff000000 && img.getRGB(pxleft, pytop) != 0xff00ff00 && img.getRGB(pxleft, pytop) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxleft, pytop) != 0xff000000 && maze.maze_img.getRGB(pxleft, pytop) != 0xff00ff00 && maze.maze_img.getRGB(pxleft, pytop) != 0xffff0000) return (false);
 		
-			if (img.getRGB(pxright, pytop) != 0xff000000 && img.getRGB(pxright, pytop) != 0xff00ff00 && img.getRGB(pxright, pytop) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxright, pytop) != 0xff000000 && maze.maze_img.getRGB(pxright, pytop) != 0xff00ff00 && maze.maze_img.getRGB(pxright, pytop) != 0xffff0000) return (false);
 		
-			if (img.getRGB(pxleft, pybottom) != 0xff000000 && img.getRGB(pxleft, pybottom) != 0xff00ff00 && img.getRGB(pxleft, pybottom) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxleft, pybottom) != 0xff000000 && maze.maze_img.getRGB(pxleft, pybottom) != 0xff00ff00 && maze.maze_img.getRGB(pxleft, pybottom) != 0xffff0000) return (false);
 		
-			if (img.getRGB(pxright, pybottom) != 0xff000000 && img.getRGB(pxright, pybottom) != 0xff00ff00 && img.getRGB(pxright, pybottom) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxright, pybottom) != 0xff000000 && maze.maze_img.getRGB(pxright, pybottom) != 0xff00ff00 && maze.maze_img.getRGB(pxright, pybottom) != 0xffff0000) return (false);
 		
 		return (true);
 	}
 	
-	public boolean player_on_red(int dx, int dy, BufferedImage img, int maze_pixel_width, int maze_pixel_height, Player player){
+	public boolean player_on_red(int dx, int dy, Maze maze, Player player){
 		
-		int pxright = (player.player_x + dx - maze_x + player.player_center_w) /maze_zoom;
-		int pybottom = (player.player_y + dy - maze_y + player.player_center_h) /maze_zoom;
-		int pxleft = (player.player_x + dx - maze_x - player.player_center_w) /maze_zoom;
-		int pytop = (player.player_y + dy - maze_y - player.player_center_h) /maze_zoom;
+		int pxright = (player.player_x + dx - maze.maze_x + player.player_center_w) /maze_zoom;
+		int pybottom = (player.player_y + dy - maze.maze_y + player.player_center_h) /maze_zoom;
+		int pxleft = (player.player_x + dx - maze.maze_x - player.player_center_w) /maze_zoom;
+		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) /maze_zoom;
 		
-		if (pxright >= maze_pixel_width || pybottom >= maze_pixel_height) // only bottom and right cause outofbounds exception so we just check those
+		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only bottom and right cause outofbounds exception so we just check those
 			return(false);
 		
-			if (img.getRGB(pxleft, pytop) == 0xffff0000) return (true);
+			if (maze.maze_img.getRGB(pxleft, pytop) == 0xffff0000) return (true);
 		
-			if (img.getRGB(pxright, pytop) == 0xffff0000) return (true);
+			if (maze.maze_img.getRGB(pxright, pytop) == 0xffff0000) return (true);
 	
-			if (img.getRGB(pxleft, pybottom) == 0xffff0000) return (true);
+			if (maze.maze_img.getRGB(pxleft, pybottom) == 0xffff0000) return (true);
 	
-			if (img.getRGB(pxright, pybottom) == 0xffff0000) return (true);
+			if (maze.maze_img.getRGB(pxright, pybottom) == 0xffff0000) return (true);
 	
 			return (false);
 	}
-	public boolean player_on_green(int dx, int dy, BufferedImage img, int maze_pixel_width, int maze_pixel_height, Player player){
+	//TODO combine player on green and player on rd
+	public boolean player_on_green(int dx, int dy, Maze maze, Player player){
 	
-		int pxright = (player.player_x + dx - maze_x + player.player_center_w) /maze_zoom;
-		int pybottom = (player.player_y + dy - maze_y + player.player_center_h) /maze_zoom;
-		int pxleft = (player.player_x + dx - maze_x - player.player_center_w) /maze_zoom;
-		int pytop = (player.player_y + dy - maze_y - player.player_center_h) /maze_zoom;
+		int pxright = (player.player_x + dx - maze.maze_x + player.player_center_w) /maze_zoom;
+		int pybottom = (player.player_y + dy - maze.maze_y + player.player_center_h) /maze_zoom;
+		int pxleft = (player.player_x + dx - maze.maze_x - player.player_center_w) /maze_zoom;
+		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) /maze_zoom;
 		
-		if (pxright >= maze_pixel_width || pybottom >= maze_pixel_height) // only bottom and right cause outofbounds exception so we just check those
+		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only bottom and right cause outofbounds exception so we just check those
 			return(false);
 		
-			if (img.getRGB(pxleft, pytop) == 0xff00ff00) return (true);
+			if (maze.maze_img.getRGB(pxleft, pytop) == 0xff00ff00) return (true);
 		
-			if (img.getRGB(pxright, pytop) == 0xff00ff00) return (true);
+			if (maze.maze_img.getRGB(pxright, pytop) == 0xff00ff00) return (true);
 	
-			if (img.getRGB(pxleft, pybottom) == 0xff00ff00) return (true);
+			if (maze.maze_img.getRGB(pxleft, pybottom) == 0xff00ff00) return (true);
 	
-			if (img.getRGB(pxright, pybottom) == 0xff00ff00) return (true);
+			if (maze.maze_img.getRGB(pxright, pybottom) == 0xff00ff00) return (true);
 	
 			return (false);
 	}
 	
-	public Player update_player(BufferedImage maze_img, int maze_pixel_width, int maze_pixel_height, boolean scrollonly, Player player){
+	public Player update_player(boolean scrollonly, Maze maze, Player player){
 		boolean moving = false;
 		// Check keyboard		
 		if(( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP )))
 		{
 			moving = true;
 			player.player_direction = pup;	
-			if (player_on_path(0, -player.player_dy, maze_img, maze_pixel_width, maze_pixel_height, player)) 
-				if ((maze_fits_on_screen(0, player.player_dy, maze_pixel_width, maze_pixel_height) || scrollonly)  && player.player_y <= FRAME_HEIGHT /2)
-					maze_y += player.player_dy;
+			if (player_on_path(0, -player.player_dy, maze, player)) 
+				if ((maze_fits_on_screen(0, player.player_dy, maze) || scrollonly)  && player.player_y <= FRAME_HEIGHT /2)
+					maze.maze_y += player.player_dy;
 				else
 					if (player_on_screen(0, -player.player_dy, player) )
 						player.player_y -= player.player_dy;	
@@ -554,9 +588,9 @@ public class Mazerush extends JFrame {
 		{
 			moving = true;
 			player.player_direction = pleft;
-			if (player_on_path(-player.player_dx, 0, maze_img, maze_pixel_width, maze_pixel_height, player)) 
-			if ((maze_fits_on_screen(player.player_dx, 0, maze_pixel_width, maze_pixel_height) || scrollonly) && player.player_x <= FRAME_WIDTH /2)
-				maze_x += player.player_dx;
+			if (player_on_path(-player.player_dx, 0, maze, player)) 
+			if ((maze_fits_on_screen(player.player_dx, 0, maze) || scrollonly) && player.player_x <= FRAME_WIDTH /2)
+				maze.maze_x += player.player_dx;
 			else
 				if (player_on_screen(-player.player_dx, 0, player) )
 					player.player_x -= player.player_dx;
@@ -565,9 +599,9 @@ public class Mazerush extends JFrame {
 		{
 			moving = true;
 			player.player_direction = pdown;	
-			if (player_on_path(0, player.player_dy, maze_img, maze_pixel_width, maze_pixel_height, player)) 
-			if ((maze_fits_on_screen(0, -player.player_dy, maze_pixel_width, maze_pixel_height) || scrollonly) && player.player_y >= FRAME_HEIGHT /2)
-				maze_y -= player.player_dy;
+			if (player_on_path(0, player.player_dy, maze, player)) 
+			if ((maze_fits_on_screen(0, -player.player_dy, maze) || scrollonly) && player.player_y >= FRAME_HEIGHT /2)
+				maze.maze_y -= player.player_dy;
 			else
 				if (player_on_screen(0, player.player_dy, player) )
 					player.player_y += player.player_dy;
@@ -576,9 +610,9 @@ public class Mazerush extends JFrame {
 		{
 			moving = true;
 			player.player_direction = pright;
-			if (player_on_path(player.player_dx, 0, maze_img, maze_pixel_width, maze_pixel_height,player)) 
-			if ((maze_fits_on_screen(-player.player_dx, 0, maze_pixel_width, maze_pixel_height) || scrollonly) && player.player_x >= FRAME_WIDTH /2)
-				maze_x -= player.player_dx;
+			if (player_on_path(player.player_dx, 0, maze ,player)) 
+			if ((maze_fits_on_screen(-player.player_dx, 0, maze) || scrollonly) && player.player_x >= FRAME_WIDTH /2)
+				maze.maze_x -= player.player_dx;
 			else
 				if (player_on_screen(player.player_dx, 0, player) )
 					player.player_x += player.player_dx;
