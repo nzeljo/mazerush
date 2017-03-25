@@ -130,7 +130,6 @@ public class Mazerush extends JFrame {
 		int AnimationFrame = -1;
 		boolean maze_completed = false;
 		long completedtime = 0;
-		long starttime = 0;
 	}
 	class Maze {
 		BufferedImage maze_img;
@@ -374,14 +373,12 @@ public class Mazerush extends JFrame {
 
 	public Player update_objects(Maze maze, Player player){
 		player = update_player (false, maze, player); 
-		if(player_on_color(mazeorigincolor, 0,0, maze, player))
-			//player.starttime = System.currentTimeMillis();
-			player.starttime = 0;
 		if(player_on_color(mazegoalcolor, 0, 0, maze, player) && !player.maze_completed) 
 			player.maze_completed = true;
 		if(!player.maze_completed)
-			//player.completedtime = System.currentTimeMillis() - player.starttime;
 			player.completedtime += objectupdate_bandwidth;
+		if(player_on_color(mazeorigincolor, 0,0, maze, player))
+			player.completedtime = 0; 
 		return(player);
 	}
 	public boolean switchmaze(int currentmaze) {
@@ -762,7 +759,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			
 			//attempt to write new highscore JSONObject to file highscores.json
 			try {
-				FileWriter file = new FileWriter(maze+".highscore");
+				FileWriter file = new FileWriter("mazes/"+maze+".highscore");
 				file.write(mazehigh.toJSONString());
 				file.flush();
 				file.close();
