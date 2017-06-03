@@ -1,0 +1,7 @@
+a2enmod rewrite
+service apache2 restart
+chmod 755 cgitest.py
+/usr/lib/cgi-bin/
+add directory var/www/html to sites-enabled/000-default.conf
+/var/www/html/.htaccess
+chmod 644 .htaccess
