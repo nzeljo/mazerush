@@ -55,6 +55,7 @@ public class Mazerush extends JFrame {
 	pup=1,
 	pright=0,
 	pleft=2,
+	pstill = 4,
 	AnimationSpeed = 10, // Higher number = slower
 	MaxAnimationFrames = 4 * AnimationSpeed;
 	static String goalsplash = "Object: finish the maze as fast as possible",
@@ -74,7 +75,7 @@ public class Mazerush extends JFrame {
 	keyssplashx = 0,
 	keyssplashy = 1,
 	spritesheeth = 4,  //how many sprite frames in spritesheet horizontally
-	spritesheetv = 4,  //how many sprite frames in spritesheet vertically
+	spritesheetv = 5,  //how many sprite frames in spritesheet vertically
 	mazepathcolor = 0xff000000,
 	mazeorigincolor = 0xff00ff00,
 	mazegoalcolor = 0xffff0000;
@@ -122,7 +123,8 @@ public class Mazerush extends JFrame {
 		player_dx = maze_zoom / player_speed,  //this means player moves maze_zoom / player_speed pixels each frame
 		player_y = maze_zoom, //FRAME_HEIGHT/2,
 		player_dy = player_dx,
-		player_direction = 0;
+		player_moving_direction = 0,
+		player_facing_direction = 0;
 		int player_width = 0;
 		int player_height = 0;
 		int player_center_w = 0;
@@ -130,6 +132,8 @@ public class Mazerush extends JFrame {
 		int AnimationFrame = -1;
 		boolean maze_completed = false;
 		long completedtime = 0;
+		String Pow = "";
+		int Powcount = 0;
 	}
 	class Maze {
 		BufferedImage maze_img;
@@ -137,10 +141,9 @@ public class Mazerush extends JFrame {
 		int maze_pixel_height;
 		int maze_x;
 		int maze_y;
-		
-			//void init() {
-			
-			//}
+		int powplaypos = 0;
+		String pow;
+		boolean powenabled = false;
 		}
 	
 	public void run() {
@@ -175,7 +178,7 @@ public class Mazerush extends JFrame {
 		int spritesheet_player_width = 0;
 		int spritesheet_player_height = 0;	
 		try {
-			URL player_url = new URL("file:resources/spritesheet6.png");
+			URL player_url = new URL("file:resources/spritesheet7.png");
 			player.spritesheet = ImageIO.read(player_url);
 			 spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 			 spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
@@ -221,7 +224,7 @@ public class Mazerush extends JFrame {
 			if(current_maze >= 0) {
 				player.player_x=maze_zoom;
 				player.player_y=maze_zoom;
-				player.player_direction = 0;
+				player.player_moving_direction = 0;
 				player.player_dx = player.player_dy = maze_zoom / player_speed;
 				player.AnimationFrame = 0;
 				maze.maze_x = 0;  //all mazes start at 0,0
@@ -231,7 +234,7 @@ public class Mazerush extends JFrame {
 				maze.maze_pixel_height = maze.maze_img.getHeight();
 				//System.out.println(maze.maze_pixel_width);
 				fanfareplaying = false;
-
+				objectupdatetick = 0;
 			}
 
 			while( current_maze >= 0 ) 
@@ -283,8 +286,17 @@ public class Mazerush extends JFrame {
 						//	hstime = System.currentTimeMillis()
 						lasthighscoreidx = findhighscore(scorearray, initialarray, player.completedtime, initials);
 					}
+					try {
+						FileWriter file = new FileWriter("pow.txt");
+						file.write(player.Pow);
+						file.flush();
+						file.close();
+						
+					} catch (IOException e2) {
+						e2.printStackTrace();
+					}
 					player.maze_completed=false;
-					break;
+					break; //break out of while loop for inner game kernal
 				}
 
 				if(keyboard.keyDownOnce( KeyEvent.VK_BACK_SPACE)) break;
@@ -359,11 +371,49 @@ public class Mazerush extends JFrame {
 	
 	
 	
-	
-	
+	public Player update_pow(Player player) {
+		char powdir;
+		switch (player.player_moving_direction) {
+		case pup:
+			powdir = 'U';
+			break;
+		case pdown:
+			powdir = 'D';
+			break;
+		case pleft:
+			powdir = 'L';
+			break;
+		case pright:
+			powdir = 'R';
+			break;
+		case pstill:
+			powdir = 'S';
+			break;
+		default:
+			powdir = '.';
+		}
+		char lastmove;
+		if(player.Pow.length() > 0){
 
+			lastmove = player.Pow.charAt(player.Pow.length() - 1);
+			if(lastmove == powdir) {
+				player.Powcount ++;
+			}
+			else {
+
+				player.Pow += Integer.toString(player.Powcount);
+				player.Powcount = 0;
+				player.Pow += powdir;
+			}
+		}
+		else {
+			player.Pow += powdir;
+		}
+		return(player);
+	}
 	public Player update_objects(Maze maze, Player player){
 		player = update_player (false, maze, player); 
+		player = update_pow(player);
 		if(player_on_color(mazegoalcolor, 0, 0, maze, player) && !player.maze_completed) 
 			player.maze_completed = true;
 		if(!player.maze_completed)
@@ -531,7 +581,7 @@ public class Mazerush extends JFrame {
 	}
 
 	public void draw_player (Graphics backbuffer, Maze maze, Player player) {
-		BufferedImage player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_direction * 16,
+		BufferedImage player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_facing_direction * 16,
 				player.player_width /2, player.player_height/2);
 		backbuffer.drawImage(player_img, player.player_x - player.player_center_w, player.player_y - player.player_center_h , player.player_width, player.player_height, null);
 		//java2s.com/Tutorial/Java/0261__2D-Graphics/
@@ -620,14 +670,31 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 
 		return (false);
 	}
-
+	public int powplayback(Maze maze){
+		int powdir = pstill,
+				lastdir = pstill;
+		int parsepos = 0;
+		if(maze.powenabled) {
+			char parsechar = maze.pow.charAt(parsepos);
+			if(Character.isLetter(parsechar)){
+				powdir = parsechar;
+				lastdir = powdir;
+			}
+			else if (Character.isDigit(parsechar))
+			return(powdir);
+		}
+		else {
+		return(powdir);
+		}
+		return(powdir);
+		}
 	public Player update_player(boolean scrollonly, Maze maze, Player player){
 		boolean moving = false;
-		// Check keyboard		
-		if(( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP )))
+		// Check keyboard
+		if( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP ) || powplayback(maze) == pup)
 		{
 			moving = true;
-			player.player_direction = pup;	
+			player.player_moving_direction = pup;	
 			if (player_on_path(0, -player.player_dy, maze, player)) 
 				if ((maze_fits_on_screen(0, player.player_dy, maze) || scrollonly)  && player.player_y <= FRAME_HEIGHT /2)
 					maze.maze_y += player.player_dy;
@@ -635,10 +702,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(0, -player.player_dy, player) )
 						player.player_y -= player.player_dy;	
 		}
-		if(( keyboard.keyDown( KeyEvent.VK_A ) || keyboard.keyDown( KeyEvent.VK_LEFT )))
+		if( keyboard.keyDown( KeyEvent.VK_A ) || keyboard.keyDown( KeyEvent.VK_LEFT ) || powplayback(maze) == pleft)
 		{
 			moving = true;
-			player.player_direction = pleft;
+			player.player_moving_direction = pleft;
 			if (player_on_path(-player.player_dx, 0, maze, player)) 
 				if ((maze_fits_on_screen(player.player_dx, 0, maze) || scrollonly) && player.player_x <= FRAME_WIDTH /2)
 					maze.maze_x += player.player_dx;
@@ -646,10 +713,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(-player.player_dx, 0, player) )
 						player.player_x -= player.player_dx;
 		}
-		if(( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN )))
+		if( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN ) || powplayback(maze) == pdown)
 		{
 			moving = true;
-			player.player_direction = pdown;	
+			player.player_moving_direction = pdown;	
 			if (player_on_path(0, player.player_dy, maze, player)) 
 				if ((maze_fits_on_screen(0, -player.player_dy, maze) || scrollonly) && player.player_y >= FRAME_HEIGHT /2)
 					maze.maze_y -= player.player_dy;
@@ -657,10 +724,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(0, player.player_dy, player) )
 						player.player_y += player.player_dy;
 		}
-		if(( keyboard.keyDown( KeyEvent.VK_D ) || keyboard.keyDown( KeyEvent.VK_RIGHT )))
+		if( keyboard.keyDown( KeyEvent.VK_D ) || keyboard.keyDown( KeyEvent.VK_RIGHT ) || powplayback(maze) == pright)
 		{
 			moving = true;
-			player.player_direction = pright;
+			player.player_moving_direction = pright;
 			if (player_on_path(player.player_dx, 0, maze ,player)) 
 				if ((maze_fits_on_screen(-player.player_dx, 0, maze) || scrollonly) && player.player_x >= FRAME_WIDTH /2)
 					maze.maze_x -= player.player_dx;
@@ -669,6 +736,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 						player.player_x += player.player_dx;
 		}
 		if(moving){
+			player.player_facing_direction = player.player_moving_direction;
 			player.AnimationFrame ++;
 			if(player.AnimationFrame >= MaxAnimationFrames)
 				player.AnimationFrame = 0;
@@ -686,6 +754,9 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					e1.printStackTrace();
 				}
 			}
+		}
+		else {
+		player.player_moving_direction = pstill;
 		}
 		return(player);
 	}
@@ -904,7 +975,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	
 	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount, Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
 		Font splashFont = new Font("SansSerif", Font.BOLD, 20);
-		player.player_direction = pleft;
+		player.player_moving_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
 		int spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 		int spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
@@ -920,7 +991,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			} catch (IOException e) {
 			}
 
-			player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_direction * 16, spritesheet_player_width, spritesheet_player_height);
+			player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_moving_direction * 16, spritesheet_player_width, spritesheet_player_height);
 			graphics.drawString(mazelist.get(topmaze).toString(), thumbnailwidth * thumbnailzoom + player.player_width, y + mazeimage.getHeight() / 2);
 			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), 0, y, thumbnailwidth * thumbnailzoom, thumbnailheight * thumbnailzoom, null);
 			graphics.drawImage(player_img, player.player_x, player.player_y, player.player_width, player.player_height, null);
@@ -939,7 +1010,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		int cursory = 0;
 		keyboard.poll();
 		player.AnimationFrame = 0;
-		player.player_direction = 0;
+		player.player_moving_direction = 0;
 		player.player_x = 0;
 		player.player_y = 0;		
 		Long[] scorearray = new Long[10];
