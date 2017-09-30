@@ -132,7 +132,13 @@ public class Mazerush extends JFrame {
 		int AnimationFrame = -1;
 		boolean maze_completed = false;
 		long completedtime = 0;
-		Pow pow;
+		String rle = null;
+		int cmove = 0;
+		int destination;
+		int powcount = 0;
+		boolean rle_active = false;
+		
+		
 		
 	}
 	class Maze {
@@ -147,7 +153,7 @@ public class Mazerush extends JFrame {
 		}
 	
 	public void run() {
-		
+		char chartest = '.';
 		Player player = new Player();
 		
 		int current_maze=0;
@@ -235,6 +241,10 @@ public class Mazerush extends JFrame {
 				//System.out.println(maze.maze_pixel_width);
 				fanfareplaying = false;
 				objectupdatetick = 0;
+				/*try {
+				player.rle = new String(Files.readAllBytes(Paths.get("pow.txt")));
+				}
+				finally {}*/
 			}
 
 			while( current_maze >= 0 ) 
@@ -288,7 +298,7 @@ public class Mazerush extends JFrame {
 					}
 					try {
 						FileWriter file = new FileWriter("pow.txt");
-						file.write(player.pow.rle);
+						file.write(player.rle);
 						file.flush();
 						file.close();
 						
@@ -392,28 +402,32 @@ public class Mazerush extends JFrame {
 		default:
 			powdir = '.';
 		}
+		
 		char lastmove;
-		if(player.pow.rle.length() > 0){
-
-			lastmove = player.pow.rle.charAt(player.pow.rle.length() - 1);
+		if(player.rle != null){
+		//System.out.println(player.pow.rle);
+			lastmove = player.rle.charAt(player.rle.length() - 1);
+			
 			if(lastmove == powdir) {
-				player.pow.powcount ++;
+				player.powcount ++;
 			}
 			else {
 
-				player.pow.rle += Integer.toString(player.pow.powcount);
-				player.pow.powcount = 0;
-				player.pow.powcount += powdir;
+				player.rle += Integer.toString(player.powcount);
+				player.powcount = 0;
+				player.rle += powdir;
 			}
 		}
 		else {
-			player.pow.rle += powdir;
+			player.rle = "" + powdir;
 		}
+		 
 		return(player);
 	}
 	public Player update_objects(Maze maze, Player player){
 		player = update_player (false, maze, player); 
-		/// TODO: player = update_pow(player);
+		player = update_pow(player);
+		System.out.println(player.rle);
 		if(player_on_color(mazegoalcolor, 0, 0, maze, player) && !player.maze_completed) 
 			player.maze_completed = true;
 		if(!player.maze_completed)
@@ -473,7 +487,7 @@ public class Mazerush extends JFrame {
 		long colorchangedelay = 0;
 		long colorchangerate = 50;
 		
-		// KERNAL
+		// KERNA)L
 		// HIGHSCORE KERNAL
 		// KERNAL
 		boolean highscore_entered = false;
@@ -701,25 +715,23 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			    cdir = "x"
 			print cdir
 */
-	class Pow{
-		String rle="";
+	/*class Pow{
+		String rle = new String ("&");
 		int cmove = 0;
 		int destination;
 		int powcount = 0;
 		
-		}
+		}*/
 	
-	public int powplayback(Pow pow){
-		return pstill;
-	}
-/*		if (pow.rle == "") return pstill;
+	public int powplayback(Player player){
+		if (player.rle == null || !player.rle_active) return pstill;
 		int parsepos = 0;
 		int movecounter = 0;
 		int cdir = 0, cnum = 0;
-		while(pow.cmove < pow.destination && parsepos < pow.rle.length()){
+		while(player.cmove < player.destination && parsepos < player.rle.length()){
 			while(movecounter == 0) {
 				String cchar = null;
-				cchar += pow.rle.charAt(parsepos); 
+				cchar += player.rle.charAt(parsepos); 
 				if(isAlpha(cchar)){
 					switch(cchar){
 					case "U": cdir = pup;
@@ -733,11 +745,11 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 				}
 				else if (isDigit(cchar)){
 
-					while(isDigit(Character.toString(pow.rle.charAt(parsepos))) && parsepos < pow.rle.length()){
+					while(isDigit(Character.toString(player.rle.charAt(parsepos))) && parsepos < player.rle.length()){
 						cnum *= 10;
-						cnum += (int)(pow.rle.charAt(parsepos));
+						cnum += (int)(player.rle.charAt(parsepos));
 						parsepos+= 1;
-						if(parsepos >= pow.rle.length()) break;
+						if(parsepos >= player.rle.length()) break;
 						movecounter = cnum;
 					}
 				}
@@ -746,13 +758,12 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					break;
 				}
 			}
-			pow.cmove+=1;
+			player.cmove+=1;
 			movecounter -= 1;
 		}
-		if(pow.destination != pow.cmove) cdir = pstill;
+		if(player.destination != player.cmove) cdir = pstill;
 		return cdir;
 	}
-	*/
 
 /*		int powdir = pstill,
 				lastdir = pstill;
@@ -780,7 +791,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	public Player update_player(boolean scrollonly, Maze maze, Player player){
 		boolean moving = false;
 		// Check keyboard
-		if( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP ) || powplayback(player.pow) == pup)
+		if( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP ) || powplayback(player) == pup)
 		{
 			moving = true;
 			player.player_moving_direction = pup;	
@@ -791,7 +802,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(0, -player.player_dy, player) )
 						player.player_y -= player.player_dy;	
 		}
-		if( keyboard.keyDown( KeyEvent.VK_A ) || keyboard.keyDown( KeyEvent.VK_LEFT ) || powplayback(player.pow) == pleft)
+		if( keyboard.keyDown( KeyEvent.VK_A ) || keyboard.keyDown( KeyEvent.VK_LEFT ) || powplayback(player) == pleft)
 		{
 			moving = true;
 			player.player_moving_direction = pleft;
@@ -802,7 +813,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(-player.player_dx, 0, player) )
 						player.player_x -= player.player_dx;
 		}
-		if( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN ) || powplayback(player.pow) == pdown)
+		if( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN ) || powplayback(player) == pdown)
 		{
 			moving = true;
 			player.player_moving_direction = pdown;	
@@ -813,7 +824,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(0, player.player_dy, player) )
 						player.player_y += player.player_dy;
 		}
-		if( keyboard.keyDown( KeyEvent.VK_D ) || keyboard.keyDown( KeyEvent.VK_RIGHT ) || powplayback(player.pow) == pright)
+		if( keyboard.keyDown( KeyEvent.VK_D ) || keyboard.keyDown( KeyEvent.VK_RIGHT ) || powplayback(player) == pright)
 		{
 			moving = true;
 			player.player_moving_direction = pright;
