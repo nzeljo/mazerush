@@ -241,6 +241,12 @@ public class Mazerush extends JFrame {
 				//System.out.println(maze.maze_pixel_width);
 				fanfareplaying = false;
 				objectupdatetick = 0;
+				String maze_name =  mazelist.get(current_maze).toString();
+				
+				JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
+				System.out.println(hstable);
+				player.rle = getpow( hstable).get(0).toString() ;
+				player.rle_active = true;
 				/*try {
 				player.rle = new String(Files.readAllBytes(Paths.get("pow.txt")));
 				}
@@ -724,6 +730,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		}*/
 	
 	public int powplayback(Player player){
+		System.out.print(player.destination);
+		System.out.print(" , ");
+		System.out.println(player.cmove);
+		player.cmove = 0;
 		if (player.rle == null || !player.rle_active) return pstill;
 		int parsepos = 0;
 		int movecounter = 0;
@@ -731,7 +741,8 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		while(player.cmove < player.destination && parsepos < player.rle.length()){
 			while(movecounter == 0) {
 				String cchar = null;
-				cchar += player.rle.charAt(parsepos); 
+				cchar += player.rle.charAt(parsepos);
+				System.out.print(cchar);
 				if(isAlpha(cchar)){
 					switch(cchar){
 					case "U": cdir = pup;
@@ -762,6 +773,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			movecounter -= 1;
 		}
 		if(player.destination != player.cmove) cdir = pstill;
+		player.destination ++;
 		return cdir;
 	}
 
@@ -946,6 +958,12 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			sortedinitials[index] = (String)initials.get(index);
 			
 		}
+	}
+	public static JSONArray getpow(JSONObject mazescores) {
+		System.out.println(mazescores);
+		JSONArray pow = (JSONArray) mazescores.get("pows");
+		return(pow);
+		
 	}
 	public static int findhighscore(Long[] sortedscores, String[] sortedinitials, Long score, String initials) {
 		for (int index=0; index<10; index++ ) {
