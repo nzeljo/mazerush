@@ -301,13 +301,15 @@ public class Mazerush extends JFrame {
 					}
 					if (check_if_highscore(player.completedtime, scoreArrays)) {
 						String initials = enter_highscores(backbuffer, buffer, spritesheet_player_width, spritesheet_player_height, player);
-						scoreArrays.times[9] = player.completedtime;
-						scoreArrays.initials[9] = initials;
-						scoreArrays.pows[9] = player.rle;
-						sorthighscores(scoreArrays);
-						savehighscores(mazelist.get(current_maze).toString(), scoreArrays);
-						//	hstime = System.currentTimeMillis()
-						lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
+						if(initials != null){
+							scoreArrays.times[9] = player.completedtime;
+							scoreArrays.initials[9] = initials;
+							scoreArrays.pows[9] = player.rle;
+							sorthighscores(scoreArrays);
+							savehighscores(mazelist.get(current_maze).toString(), scoreArrays);
+							//	hstime = System.currentTimeMillis()
+							lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
+						}
 					}
 					try {
 						FileWriter file = new FileWriter("pow.txt");
@@ -535,7 +537,7 @@ public class Mazerush extends JFrame {
 		// KERNAL
 		boolean highscore_entered = false;
 		long highscore_delay = System.currentTimeMillis() + 60 * 1000;
-		while(!(highscore_entered==true && System.currentTimeMillis() > highscore_delay)){ //Highscore kernal  HS KERNAL
+		while(!(highscore_entered==true && System.currentTimeMillis() > highscore_delay) && !(keyboard.keyDown( KeyEvent.VK_ESCAPE ))){ //Highscore kernal  HS KERNAL
 			try{	
 				highscore_graphics = buffer.getDrawGraphics();
 				highscore_graphics.setColor(fillcolor);
@@ -618,8 +620,11 @@ public class Mazerush extends JFrame {
 					highscore_graphics.dispose();
 			}
 		}
-		initials = hsbuf;
-		return(initials);
+		if(!(keyboard.keyDown( KeyEvent.VK_ESCAPE ))){
+			initials = hsbuf;
+			return(initials);
+		}
+			else return(null);
 	}
 	public boolean maze_fits_on_screen(int dx, int dy, Maze maze){
 		if ((maze.maze_x+dx) > 0) return (false);
