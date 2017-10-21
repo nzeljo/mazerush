@@ -47,15 +47,15 @@ public class Mazerush extends JFrame {
 	FRAME_HEIGHT = 480,
 	maze_zoom = 40,
 	player_speed = 8, //1=maze_zoom pixels per frame ; 8=maze_zoom/8 pixels per frame
-	objectupdate_bandwidth = 14, // ms between object updates
+	objectupdate_bandwidth = 14, //time in milliseconds between object updates
 	maze_subimage_width = FRAME_WIDTH / maze_zoom,
 	maze_subimage_height = FRAME_HEIGHT / maze_zoom,
 	KernalSleepTime = 10,
-	pdown = 3,
-	pup=1,
-	pright=0,
-	pleft=2,
-	pstill = 4,
+	pup    = 0b0001,
+	pdown  = 0b0010,
+	pleft  = 0b0100,
+	pright = 0b1000,
+	pstill = 0,
 	AnimationSpeed = 10, // Higher number = slower
 	MaxAnimationFrames = 4 * AnimationSpeed;
 	static String goalsplash = "Object: finish the maze as fast as possible",
@@ -134,9 +134,9 @@ public class Mazerush extends JFrame {
 		long completedtime = 0;
 		String rle = null;
 		int cmove = 0;
-		int destination;
+		int powtick;
 		int powcount = 0;
-		boolean rle_active = false;
+		boolean powplayback_enabled = false;
 		
 		
 		
@@ -243,15 +243,17 @@ public class Mazerush extends JFrame {
 				//------------------------------------POW TEST CODE ----------------
 				String maze_name =  mazelist.get(current_maze).toString();
 				JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
-				player.rle_active = false; //default
+				player.powplayback_enabled = false; // default
+				
 				JSONArray maze_pow = getpow(hstable);
 				if (maze_pow != null) {
-					player.rle = maze_pow.get(0).toString();
-					if (player.rle.length() > 0)
-						player.rle_active = true;
-				}
-
-				
+					if (maze_pow.get(0) != null)
+						if (maze_pow.get(0).toString().length() >0)
+							player.powplayback_enabled = true;
+							player.powtick = 0;
+							player.rle = maze_pow.get(0).toString();
+							System.out.println("powplayback enabled");
+				}			
 			}
 
 			while( current_maze >= 0 ) 
@@ -388,7 +390,33 @@ public class Mazerush extends JFrame {
 	
 	
 	
-	public Player update_pow(Player player) {
+	public Player powrecord(Player player) {
+		char powdir = (char) (65 + player.player_moving_direction);
+		char lastmove;
+		if(player.rle == null) player.rle = "";
+		if(player.rle.length() > 0){
+		//System.out.println(player.pow.rle);
+			lastmove = player.rle.charAt(player.rle.length() - 1);
+			
+			if(lastmove == powdir) {
+				player.powcount ++;
+			}
+			else {
+
+				player.rle += Integer.toString(player.powcount);
+				player.powcount = 0;
+				player.rle += powdir;
+			}
+		}
+		else {
+			player.rle = "" + powdir;
+		}
+		System.out.println(player.rle); 
+		return(player);
+	}
+	
+	/* OLD 4 directional version
+	public Player powrecord(Player player) {
 		char powdir;
 		switch (player.player_moving_direction) {
 		case pup:
@@ -411,7 +439,8 @@ public class Mazerush extends JFrame {
 		}
 		
 		char lastmove;
-		if(player.rle != null){
+		if(player.rle == null) player.rle = "";
+		if(player.rle.length() > 0){
 		//System.out.println(player.pow.rle);
 			lastmove = player.rle.charAt(player.rle.length() - 1);
 			
@@ -430,11 +459,14 @@ public class Mazerush extends JFrame {
 		}
 		 
 		return(player);
-	}
+	} */
+
+	
+	
 	public Player update_objects(Maze maze, Player player){
+
 		player = update_player (false, maze, player); 
-		player = update_pow(player);
-		//System.out.println(player.rle);
+		if (!player.powplayback_enabled) player = powrecord(player);
 		if(player_on_color(mazegoalcolor, 0, 0, maze, player) && !player.maze_completed) 
 			player.maze_completed = true;
 		if(!player.maze_completed)
@@ -694,11 +726,11 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 /*	rle = "R30D78L12"
 
 			parsepos = 0
-			destination = 84
+			powtick = 84
 			cmove = 0
 			movecounter = 0
 
-			while(cmove < destination and parsepos < len(rle)):
+			while(cmove < powtick and parsepos < len(rle)):
 				while(movecounter == 0):
 					cchar = rle[parsepos]
 					if(cchar.isalpha()):
@@ -718,62 +750,55 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 						break
 				cmove+=1
 				movecounter -= 1
-			if destination != cmove:
+			if powtick != cmove:
 			    cdir = "x"
 			print cdir
 */
 	/*class Pow{
 		String rle = new String ("&");
 		int cmove = 0;
-		int destination;
+		int powtick;
 		int powcount = 0;
 		
 		}*/
-	
 	public int powplayback(Player player){
-		
 		player.cmove = 0;
-		if (player.rle == null || !player.rle_active) return pstill;
+		if (!player.powplayback_enabled) return pstill;
 		int parsepos = 0;
-		int movecounter = 0;
+		int movecounter = -1;
 		int cdir = 0, cnum = 0;
-		while(player.cmove < player.destination && parsepos < player.rle.length()){
-			while(movecounter == 0) {
-				//String cchar = null;
-				String cchar = "" + player.rle.charAt(parsepos);
-				if(isAlpha( cchar)){
-					switch(cchar){
-					case "U": cdir = pup; break;
-					case "D": cdir = pdown; break;
-					case "L": cdir = pleft; break;
-					case "R": cdir = pright; break;
-					default: cdir = pstill;
-					}
-					parsepos++;
-					//\cnum = 0;
-				}
-				else if (isDigit(cchar)){
-					cnum = 0;
+
+
+		while(player.cmove < player.powtick && parsepos < player.rle.length()){
+			while(movecounter < 0 && parsepos < player.rle.length()) {
+				int cchar = (int) player.rle.charAt(parsepos);
+				if( cchar >= 65 & cchar <= 90 ){  /* isAlpha? */
+					cdir = cchar - 65;
 					
+					parsepos++;
+				}
+				else if (cchar >=48 & cchar <=57){ /* isDigit? */
+					cnum = 0;
+
 					while(isDigit(Character.toString(player.rle.charAt(parsepos))) && parsepos < player.rle.length()){
 						cnum *= 10;
 						cnum += (int)(player.rle.charAt(parsepos)) - 48;
 						parsepos ++;
 						if(parsepos >= player.rle.length()) break;
-						movecounter = cnum - 1; //fudge!
 					}
-					
+					movecounter = cnum;
 				}
 				else {
 					cdir = pstill;
 					break;
 				}
 			}
-			player.cmove+=1;
-			movecounter -= 1;
+			player.cmove ++;
+			movecounter --;
 		}
-		if(player.destination != player.cmove) cdir = pstill;
+		if(player.powtick != player.cmove) cdir = pstill;
 		return cdir;
+	
 	}
 
 /*		int powdir = pstill,
@@ -801,11 +826,17 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	}
 	public Player update_player(boolean scrollonly, Maze maze, Player player){
 		boolean moving = false;
+		// Check pow
+		int powdir = powplayback(player);
+		if (player.powplayback_enabled) {
+			player.powtick ++;
+		}
 		// Check keyboard
-		if( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP ) || powplayback(player) == pup)
+		player.player_moving_direction = 0; /* clear before setting bits for directions */
+		if( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP ) || ((powdir & pup) > 0))
 		{
 			moving = true;
-			player.player_moving_direction = pup;	
+			player.player_moving_direction |= pup;	
 			if (player_on_path(0, -player.player_dy, maze, player)) 
 				if ((maze_fits_on_screen(0, player.player_dy, maze) || scrollonly)  && player.player_y <= FRAME_HEIGHT /2)
 					maze.maze_y += player.player_dy;
@@ -813,10 +844,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(0, -player.player_dy, player) )
 						player.player_y -= player.player_dy;	
 		}
-		if( keyboard.keyDown( KeyEvent.VK_A ) || keyboard.keyDown( KeyEvent.VK_LEFT ) || powplayback(player) == pleft)
+		if( keyboard.keyDown( KeyEvent.VK_A ) || keyboard.keyDown( KeyEvent.VK_LEFT ) || ((powdir & pleft) > 0) )
 		{
 			moving = true;
-			player.player_moving_direction = pleft;
+			player.player_moving_direction |= pleft;
 			if (player_on_path(-player.player_dx, 0, maze, player)) 
 				if ((maze_fits_on_screen(player.player_dx, 0, maze) || scrollonly) && player.player_x <= FRAME_WIDTH /2)
 					maze.maze_x += player.player_dx;
@@ -824,10 +855,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(-player.player_dx, 0, player) )
 						player.player_x -= player.player_dx;
 		}
-		if( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN ) || powplayback(player) == pdown)
+		if( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN ) || ((powdir & pdown) > 0) )
 		{
 			moving = true;
-			player.player_moving_direction = pdown;	
+			player.player_moving_direction |= pdown;	
 			if (player_on_path(0, player.player_dy, maze, player)) 
 				if ((maze_fits_on_screen(0, -player.player_dy, maze) || scrollonly) && player.player_y >= FRAME_HEIGHT /2)
 					maze.maze_y -= player.player_dy;
@@ -835,10 +866,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(0, player.player_dy, player) )
 						player.player_y += player.player_dy;
 		}
-		if( keyboard.keyDown( KeyEvent.VK_D ) || keyboard.keyDown( KeyEvent.VK_RIGHT ) || (powplayback(player) == pright))
+		if( keyboard.keyDown( KeyEvent.VK_D ) || keyboard.keyDown( KeyEvent.VK_RIGHT ) || ((powdir & pright) > 0) )
 		{
 			moving = true;
-			player.player_moving_direction = pright;
+			player.player_moving_direction |= pright;
 			if (player_on_path(player.player_dx, 0, maze ,player)) 
 				if ((maze_fits_on_screen(-player.player_dx, 0, maze) || scrollonly) && player.player_x >= FRAME_WIDTH /2)
 					maze.maze_x -= player.player_dx;
@@ -847,7 +878,11 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 						player.player_x += player.player_dx;
 		}
 		if(moving){
-			player.player_facing_direction = player.player_moving_direction;
+			if ( (player.player_moving_direction & pup) > 0) player.player_facing_direction = 1;
+			if ( (player.player_moving_direction & pdown) > 0) player.player_facing_direction = 3;
+			if ( (player.player_moving_direction & pleft) > 0) player.player_facing_direction = 2;
+			if ( (player.player_moving_direction & pright) > 0) player.player_facing_direction = 0;
+				
 			player.AnimationFrame ++;
 			if(player.AnimationFrame >= MaxAnimationFrames)
 				player.AnimationFrame = 0;
@@ -869,17 +904,13 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		else {
 		player.player_moving_direction = pstill;
 		}
-		if (player.rle_active) {
-			player.destination ++;
-		}
-		
 		return(player);
 	}
 	public static void savehighscores(String maze, Long[] scorearray, String[] initialarray) {
 		JSONArray scores = new JSONArray();
 		JSONArray initials = new JSONArray();
 
-		JSONObject mazeshigh = new JSONObject();
+//		JSONObject mazeshigh = new JSONObject();
 		for (int i=0; i<10; i++ ) {
 			scores.add(scorearray[i]);
 			initials.add(initialarray[i]);
@@ -1112,7 +1143,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			} catch (IOException e) {
 			}
 
-			player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_moving_direction * 16, spritesheet_player_width, spritesheet_player_height);
+			player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_facing_direction * 16, spritesheet_player_width, spritesheet_player_height);
 			graphics.drawString(mazelist.get(topmaze).toString(), thumbnailwidth * thumbnailzoom + player.player_width, y + mazeimage.getHeight() / 2);
 			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), 0, y, thumbnailwidth * thumbnailzoom, thumbnailheight * thumbnailzoom, null);
 			graphics.drawImage(player_img, player.player_x, player.player_y, player.player_width, player.player_height, null);
