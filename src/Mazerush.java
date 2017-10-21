@@ -137,9 +137,13 @@ public class Mazerush extends JFrame {
 		int powtick;
 		int powcount = 0;
 		boolean powplayback_enabled = false;
-		
-		
-		
+	}
+	class ScoreArrays {
+		Long[] times = new Long[10];
+		String[] initials = new String[10];
+		String[] pows = new String[10];
+		/*		Long[] scorearray = new Long[10];
+		String[] initialArray = new String[10];*/
 	}
 	class Maze {
 		BufferedImage maze_img;
@@ -161,9 +165,8 @@ public class Mazerush extends JFrame {
 		//initialize maze database
 		JSONArray mazelist = findmazefiles();
 		mazecount = mazelist.size();
-		Long[] scorearray = new Long[10];
-		String[] initialarray = new String[10];
-
+		
+		ScoreArrays scoreArrays = new ScoreArrays();
 		
 		canvas.createBufferStrategy( 2 );
 		BufferStrategy buffer = canvas.getBufferStrategy();
@@ -220,7 +223,7 @@ public class Mazerush extends JFrame {
 		// GAME KERNAL
 		while(current_maze>=0){
 
-			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx);
+			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx, scoreArrays);
 			long completed_delay = 0;
 			Font timeFont = new Font("SansSerif", Font.BOLD, 20); 
 			int	maze_overscan_x = 0;
@@ -234,7 +237,7 @@ public class Mazerush extends JFrame {
 				player.AnimationFrame = 0;
 				maze.maze_x = 0;  //all mazes start at 0,0
 				maze.maze_y = 0;  //could change so that we look for the mazeorigincolor
-				maze.maze_img = enter_maze(current_maze, mazelist, scorearray, initialarray);
+				maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
 				maze.maze_pixel_width = maze.maze_img.getWidth();
 				maze.maze_pixel_height = maze.maze_img.getHeight();
 				//System.out.println(maze.maze_pixel_width);
@@ -296,14 +299,15 @@ public class Mazerush extends JFrame {
 					catch (InterruptedException e) {
 
 					}
-					if (check_if_highscore(player.completedtime, scorearray)) {
+					if (check_if_highscore(player.completedtime, scoreArrays)) {
 						String initials = enter_highscores(backbuffer, buffer, spritesheet_player_width, spritesheet_player_height, player);
-						scorearray[9] = player.completedtime;
-						initialarray[9] = initials;
-						sorthighscores(scorearray, initialarray);
-						savehighscores(mazelist.get(current_maze).toString(), scorearray, initialarray);
+						scoreArrays.times[9] = player.completedtime;
+						scoreArrays.initials[9] = initials;
+						scoreArrays.pows[9] = player.rle;
+						sorthighscores(scoreArrays);
+						savehighscores(mazelist.get(current_maze).toString(), scoreArrays);
 						//	hstime = System.currentTimeMillis()
-						lasthighscoreidx = findhighscore(scorearray, initialarray, player.completedtime, initials);
+						lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
 					}
 					try {
 						FileWriter file = new FileWriter("pow.txt");
@@ -906,14 +910,16 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		}
 		return(player);
 	}
-	public static void savehighscores(String maze, Long[] scorearray, String[] initialarray) {
+	public static void savehighscores(String maze, ScoreArrays scoreArrays) {
 		JSONArray scores = new JSONArray();
 		JSONArray initials = new JSONArray();
+		JSONArray pows = new JSONArray();
 
 //		JSONObject mazeshigh = new JSONObject();
 		for (int i=0; i<10; i++ ) {
-			scores.add(scorearray[i]);
-			initials.add(initialarray[i]);
+			scores.add(scoreArrays.times[i]);
+			initials.add(scoreArrays.initials[i]);
+			pows.add(scoreArrays.pows[i]);
 		}
 	
 			JSONObject mazehigh = new JSONObject();
@@ -921,6 +927,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			mazehigh.put("mazename", maze);
 			mazehigh.put("highscores",scores);
 			mazehigh.put("initials",initials);
+			mazehigh.put("pows",pows);
 		
 		//attempt to write new highscore JSONObject to file highscores.json
 		try {
@@ -979,17 +986,17 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 
 		}
 	}
-	public static boolean check_if_highscore(long completedtime, Long[] scorearray) {
-		if(completedtime < scorearray[9]) return(true);
+	public static boolean check_if_highscore(long completedtime, ScoreArrays scoreArrays) {
+		if(completedtime < scoreArrays.times[9]) return(true);
 		return(false);
 	}
-	public static void converthighscores(JSONObject mazescores, Long[] sortedscores, String[] sortedinitials) {
+	public static void converthighscores(JSONObject mazescores, ScoreArrays scoreArrays) {
 		JSONArray scores = (JSONArray) mazescores.get("highscores");
 		JSONArray initials = (JSONArray) mazescores.get("initials");
-		
+
 		for (int index=0; index<10; index++ ) {
-			sortedscores[index] = (Long)scores.get(index);	//(Long) type conversion between JSON and java objects
-			sortedinitials[index] = (String)initials.get(index);
+			scoreArrays.times[index] = (Long)scores.get(index);	//(Long) type conversion between JSON and java objects
+			scoreArrays.initials[index] = (String)initials.get(index);
 			
 		}
 	}
@@ -999,25 +1006,25 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		return(pow);
 		
 	}
-	public static int findhighscore(Long[] sortedscores, String[] sortedinitials, Long score, String initials) {
+	public static int findhighscore(ScoreArrays scoreArrays, Long score, String initials) {
 		for (int index=0; index<10; index++ ) {
-			if(sortedscores[index] == score && sortedinitials[index] == initials){
+			if(scoreArrays.times[index] == score && scoreArrays.initials[index] == initials){
 				return(index);
 			}
 		}
 		return(-1);
 	}
-	public static void sorthighscores(Long[] sortedscores, String[] sortedinitials) {
+	public static void sorthighscores(ScoreArrays sortedScoreArrays) {
 		int left = 0;
 		int right = 9;
-		scoreQuickSort(sortedscores, sortedinitials, left, right);
+		scoreQuickSort(sortedScoreArrays, left, right);
 	}
-	public static void displayhighscores(Long[] sortedscores, String[] sortedinitials, Graphics graphics, int hsx, int hsy, int lasthighscoreidx) {
+	public static void displayhighscores(ScoreArrays scoreArrays, Graphics graphics, int hsx, int hsy, int lasthighscoreidx) {
 		//print lasths
-		sorthighscores(sortedscores, sortedinitials);
+		sorthighscores(scoreArrays);
 		int left = 0;
 		int right = 9;
-		scoreQuickSort(sortedscores, sortedinitials, left, right);
+		scoreQuickSort(scoreArrays, left, right);
 		final int ystep = 25;
 		final int starty = hsy + ystep;
 		graphics.setColor(Color.white);
@@ -1028,13 +1035,13 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			int printy = starty + ystep * index;
 			//String temp =(String)scores.get(index);
 			//long time = Long.parseLong(temp);
-			long time = sortedscores[index];
+			long time = scoreArrays.times[index];
 			if(index == lasthighscoreidx)
 				graphics.setColor(Color.blue);
 			else
 				graphics.setColor(Color.black);
 			//	graphics.drawString(String.format("%d. %s (%d.%02d)", index + 1, sortedinitials[index], time / 1000, time % 1000 / 10), 430, printy);
-			graphics.drawString(String.format("%d. %s", index + 1, sortedinitials[index]), hsx, printy);
+			graphics.drawString(String.format("%d. %s", index + 1, scoreArrays.initials[index]), hsx, printy);
 			graphics.drawString(String.format("(%d.%02d)", time / 1000, time % 1000 / 10), hsx + 86, printy);
 			//graphics.drawString(String.format("Time: %04d.%02d", completedtime / 1000, completedtime % 1000), 10, 40);
 		}
@@ -1093,12 +1100,12 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 
 	 
 
-	static void scoreQuickSort(Long scores[], String initials[], int left, int right) {
-	      int index = partition(scores, initials, left, right);
+	static void scoreQuickSort(ScoreArrays scoreArrays, int left, int right) {
+	      int index = partition(scoreArrays.times, scoreArrays.initials, left, right); //TODO check sorting
 	      if (left < index - 1)
-	            scoreQuickSort(scores, initials, left, index - 1);
+	            scoreQuickSort(scoreArrays, left, index - 1);
 	      if (index < right)
-	            scoreQuickSort(scores, initials, index, right);
+	            scoreQuickSort(scoreArrays, index, right);
 	}
 	public static JSONArray findmazefiles() {
 
@@ -1153,7 +1160,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	}
 	
 	
-	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount, Player player, int listlocation, int lasthighscoreidx) {
+	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount, Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays) {
 		int lastmaze = listlocation; //storing last maze so we can use for highscore highlight
 		int thumbnailheight = FRAME_HEIGHT/maze_zoom;
 	//	int thumbnailheight = 16;
@@ -1165,8 +1172,6 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		player.player_moving_direction = 0;
 		player.player_x = 0;
 		player.player_y = 0;		
-		Long[] scorearray = new Long[10];
-		String[] initialarray = new String[10];
 	
 		while(!(keyboard.keyDown( KeyEvent.VK_ENTER ) || keyboard.keyDown( KeyEvent.VK_ESCAPE )))
 		{
@@ -1176,11 +1181,11 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			graphics.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 			player.player_y = cursory * thumbnailzoom * thumbnailheight;
 			displayMazeThumbs(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom, thumbnailheight, thumbnailwidth);
-			converthighscores(gethighscoretable(mazelist.get(listlocation+cursory).toString()), scorearray, initialarray);
+			converthighscores(gethighscoretable(mazelist.get(listlocation+cursory).toString()), scoreArrays);
 			if((listlocation + cursory) == lastmaze)
-				displayhighscores(scorearray, initialarray, graphics, FRAME_WIDTH * 3/5, 0, lasthighscoreidx);
+				displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3/5, 0, lasthighscoreidx);
 			else
-				displayhighscores(scorearray, initialarray, graphics, FRAME_WIDTH * 3/5, 0, -1);
+				displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3/5, 0, -1);
 			//highlightmaze(listlocation);
 			
 			buffer.show();
@@ -1319,14 +1324,14 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	}
 
 	
-	public static BufferedImage enter_maze(int current_maze, JSONArray mazelist, Long[] scorearray, String[] initialarray) {
+	public static BufferedImage enter_maze(int current_maze, JSONArray mazelist, ScoreArrays scoreArrays) {
 		BufferedImage mazeimage = null;
 		try {	
 			mazeimage = ImageIO.read(new File("mazes/"+mazelist.get(current_maze).toString()));	       
 		} catch (IOException e) {
 		}
 		
-		converthighscores(gethighscoretable(mazelist.get(current_maze).toString()), scorearray, initialarray);
+		converthighscores(gethighscoretable(mazelist.get(current_maze).toString()), scoreArrays);
 		return(mazeimage);
 	}
 	public static void sampleplayback(final File fileName) throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
