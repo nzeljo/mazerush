@@ -250,12 +250,14 @@ public class Mazerush extends JFrame {
 				
 				JSONArray maze_pow = getpow(hstable);
 				if (maze_pow != null) {
-					if (maze_pow.get(0) != null)
-						if (maze_pow.get(0).toString().length() >0)
-							player.powplayback_enabled = true;
+					if (maze_pow.get(0) != null) {
+						if (maze_pow.get(0).toString().length() >0) {
+						//	player.powplayback_enabled = true;
 							player.powtick = 0;
 							player.rle = maze_pow.get(0).toString();
 							System.out.println("powplayback enabled");
+						}
+					}
 				}			
 			}
 
@@ -962,6 +964,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			
 			JSONArray scores = new JSONArray();
 			JSONArray initials = new JSONArray();
+			JSONArray pows = new JSONArray();
 
 			JSONObject mazeshigh = new JSONObject();
 			for (int i=0; i<10; i++ ) {
@@ -969,6 +972,8 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 				int ch = rnd.nextInt(26) + 65;
 				char initchar = new Character((char) ch);
 				initials.add(Character.toString(initchar));
+				pows.add(new String(""));
+				
 			}
 		
 				JSONObject mazehigh = new JSONObject();
@@ -976,7 +981,8 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 				mazehigh.put("mazename", maze);
 				mazehigh.put("highscores",scores);
 				mazehigh.put("initials",initials);
-			
+				mazehigh.put("pows",pows);
+
 			//attempt to write new highscore JSONObject to file highscores.json
 			try {
 				FileWriter file = new FileWriter("mazes/"+maze+".highscore");
@@ -998,10 +1004,12 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	public static void converthighscores(JSONObject mazescores, ScoreArrays scoreArrays) {
 		JSONArray scores = (JSONArray) mazescores.get("highscores");
 		JSONArray initials = (JSONArray) mazescores.get("initials");
+		JSONArray pows = (JSONArray) mazescores.get("pows");
 
 		for (int index=0; index<10; index++ ) {
 			scoreArrays.times[index] = (Long)scores.get(index);	//(Long) type conversion between JSON and java objects
 			scoreArrays.initials[index] = (String)initials.get(index);
+			scoreArrays.pows[index] = (String)pows.get(index);
 			
 		}
 	}
@@ -1052,7 +1060,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		}
 	}
 	
-	static int partition(Long scores[], String initials[], int left, int right)
+	static int partition(ScoreArrays scoreArrays, int left, int right)
 
 	{
 
@@ -1061,33 +1069,39 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	      Long tmp;
 	      String stmp;
 
-	      Long pivot = scores[(left + right) / 2];
+	      Long pivot = scoreArrays.times[(left + right) / 2];
 
 	     
 
 	      while (i <= j) {
 
-	            while (scores[i] < pivot)
+	            while (scoreArrays.times[i] < pivot)
 
 	                  i++;
 
-	            while (scores[j] > pivot)
+	            while (scoreArrays.times[j] > pivot)
 
 	                  j--;
 
 	            if (i <= j) {
 
-	                  tmp = scores[i];
+	                  tmp = scoreArrays.times[i];
 
-	                  scores[i] = scores[j];
+	                  scoreArrays.times[i] = scoreArrays.times[j];
 
-	                  scores[j] = tmp;
+	                  scoreArrays.times[j] = tmp;
 	                  
-	                  stmp = initials[i];
+	                  stmp = scoreArrays.initials[i];
 
-	                  initials[i] = initials[j];
+	                  scoreArrays.initials[i] = scoreArrays.initials[j];
 
-	                  initials[j] = stmp;
+	                  scoreArrays.initials[j] = stmp;
+	                  
+	                  stmp = scoreArrays.pows[i];
+	                  
+	                  scoreArrays.pows[i] = scoreArrays.pows[j];
+	                  
+	                  scoreArrays.pows[j] = stmp;
 
 	                  i++;
 
@@ -1106,7 +1120,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	 
 
 	static void scoreQuickSort(ScoreArrays scoreArrays, int left, int right) {
-	      int index = partition(scoreArrays.times, scoreArrays.initials, left, right); //TODO check sorting
+	      int index = partition(scoreArrays, left, right); //TODO check sorting
 	      if (left < index - 1)
 	            scoreQuickSort(scoreArrays, left, index - 1);
 	      if (index < right)
