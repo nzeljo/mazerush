@@ -47,7 +47,7 @@ public class Mazerush extends JFrame {
 	FRAME_HEIGHT = 480,
 	maze_zoom = 40,
 	player_speed = 8, //1=maze_zoom pixels per frame ; 8=maze_zoom/8 pixels per frame
-	objectupdate_bandwidth = 14, //time in milliseconds between object updates
+	objectupdate_bandwidth = 14, //Was 14, //time in milliseconds between object updates
 	maze_subimage_width = FRAME_WIDTH / maze_zoom,
 	maze_subimage_height = FRAME_HEIGHT / maze_zoom,
 	KernalSleepTime = 10,
@@ -137,6 +137,7 @@ public class Mazerush extends JFrame {
 		int powtick;
 		int powcount = 0;
 		boolean powplayback_enabled = false;
+		int spritesheet_player_height, spritesheet_player_width;
 	}
 	class ScoreArrays {
 		Long[] times = new Long[10];
@@ -159,8 +160,8 @@ public class Mazerush extends JFrame {
 	public void run() {
 		Player player = new Player();
 		
-		int current_maze=0;
-		File fanfare = new File("resources/fanfare1.wav");
+		int current_maze = 1;
+	//TODO	File fanfare = new File("resources/fanfare1.wav");
 		
 		//initialize maze database
 		JSONArray mazelist = findmazefiles();
@@ -183,21 +184,21 @@ public class Mazerush extends JFrame {
 		// .....
 		splashscreen(buffer);
 		player.spritesheet = null;
-		int spritesheet_player_width = 0;
-		int spritesheet_player_height = 0;	
+		player.spritesheet_player_width = 0;
+		player.spritesheet_player_height = 0;	
 		try {
 			URL player_url = new URL("file:resources/spritesheet7.png");
 			player.spritesheet = ImageIO.read(player_url);
-			 spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
-			 spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
-			 player.player_width = spritesheet_player_width * 2;
-			 player.player_height = spritesheet_player_height * 2;
+			 player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
+			 player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
+			 player.player_width = player.spritesheet_player_width * 2;
+			 player.player_height = player.spritesheet_player_height * 2;
 			 player.player_center_w = player.player_width /2;
 			 player.player_center_h = player.player_height /2;
 		} catch (IOException e) {
 		}
 		Maze maze = new Maze();
-		boolean fanfareplaying = false;
+	//TODO	boolean fanfareplaying = false;
 		int lasthighscoreidx = -1;
 
 		TimerTask updateFPS = new TimerTask() {
@@ -221,38 +222,35 @@ public class Mazerush extends JFrame {
 		// GAME KERNAL
 		// GAME KERNAL
 		// GAME KERNAL
-		while(current_maze>=0){
-
+		while(current_maze>0){
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx, scoreArrays);
-			long completed_delay = 0;
-			Font timeFont = new Font("SansSerif", Font.BOLD, 20); 
-			int	maze_overscan_x = 0;
-			int maze_overscan_y = 0;
 
-			if(current_maze >= 0) {
-				player.player_x=maze_zoom;
-				player.player_y=maze_zoom;
-				player.player_moving_direction = 0;
-				player.player_dx = player.player_dy = maze_zoom / player_speed;
-				player.AnimationFrame = 0;
-				maze.maze_x = 0;  //all mazes start at 0,0
-				maze.maze_y = 0;  //could change so that we look for the mazeorigincolor
-				maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
-				maze.maze_pixel_width = maze.maze_img.getWidth();
-				maze.maze_pixel_height = maze.maze_img.getHeight();
-				//System.out.println(maze.maze_pixel_width);
-				fanfareplaying = false;
-				objectupdatetick = 0;
+			doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d);
+				}
+	}
+
+	public void doMazeRun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays, Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d){
+		int lasthighscoreidx = 0;
+		File fanfare = new File("resources/fanfare1.wav");
+		boolean fanfareplaying = false;
+		long completed_delay = 0;
+		Font timeFont = new Font("SansSerif", Font.BOLD, 20); 
+		int	maze_overscan_x = 0;
+		int maze_overscan_y = 0;
+
+		if(current_maze != 0) {
+			player.powplayback_enabled = false; // default
+			if(current_maze < 0){
+				current_maze *= -1;
 				//------------------------------------POW TEST CODE ----------------
 				String maze_name =  mazelist.get(current_maze).toString();
 				JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
-				player.powplayback_enabled = false; // default
 				
 				JSONArray maze_pow = getpow(hstable);
 				if (maze_pow != null) {
 					if (maze_pow.get(0) != null) {
 						if (maze_pow.get(0).toString().length() >0) {
-						//	player.powplayback_enabled = true;
+							player.powplayback_enabled = true;
 							player.powtick = 0;
 							player.rle = maze_pow.get(0).toString();
 							System.out.println("powplayback enabled");
@@ -260,142 +258,154 @@ public class Mazerush extends JFrame {
 					}
 				}			
 			}
+			player.player_x=maze_zoom;
+			player.player_y=maze_zoom;
+			player.player_moving_direction = 0;
+			player.player_dx = player.player_dy = maze_zoom / player_speed;
+			player.AnimationFrame = 0;
+			maze.maze_x = 0;  //all mazes start at 0,0
+			maze.maze_y = 0;  //could change so that we look for the mazeorigincolor
+			maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
+			maze.maze_pixel_width = maze.maze_img.getWidth();
+			maze.maze_pixel_height = maze.maze_img.getHeight();
+			//System.out.println(maze.maze_pixel_width);
+			fanfareplaying = false;
+			objectupdatetick = 0;
+		}
 
-			while( current_maze >= 0 ) 
-			{
-				//inner kernel loop starts here
+		while( current_maze > 0 ) 
+		{
+			//inner kernel loop starts here
 
 
-				while (objectupdatetick > 0) {
-					objectupdatetick --;
-					player = update_objects(maze, player);
-					// Poll the keyboard - may want to move into update object while loop
-					keyboard.poll();
-
-
-				}
-
-				if(player.maze_completed && !fanfareplaying) { 
-					completed_delay = System.currentTimeMillis() + 2 * 500;
-					fanfareplaying = true;
-					try {
-						sampleplayback(fanfare);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					} catch (UnsupportedAudioFileException e1) {
-						e1.printStackTrace();
-					} catch (LineUnavailableException e1) {
-						e1.printStackTrace();
-					} catch (InterruptedException e1) {
-						e1.printStackTrace();
-					}
-				}
-				if(player.maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { //<- This line requires you to go on red and then go off of it again
-					completed_delay=0;
-
-					try {
-
-						Thread.sleep(2000); //transitional pause
-
-					} 
-					catch (InterruptedException e) {
-
-					}
-					if (check_if_highscore(player.completedtime, scoreArrays)) {
-						String initials = enter_highscores(backbuffer, buffer, spritesheet_player_width, spritesheet_player_height, player);
-						if(initials != null){
-							scoreArrays.times[9] = player.completedtime;
-							scoreArrays.initials[9] = initials;
-							scoreArrays.pows[9] = player.rle;
-							sorthighscores(scoreArrays);
-							savehighscores(mazelist.get(current_maze).toString(), scoreArrays);
-							//	hstime = System.currentTimeMillis()
-							lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
-						}
-					}
-					try {
-						FileWriter file = new FileWriter("pow.txt");
-						file.write(player.rle);
-						file.flush();
-						file.close();
-						
-					} catch (IOException e2) {
-						e2.printStackTrace();
-					}
-					player.maze_completed=false;
-					break; //break out of while loop for inner game kernal
-				}
-
-				if(keyboard.keyDownOnce( KeyEvent.VK_BACK_SPACE)) break;
-				// Should we exit?
-				if( keyboard.keyDownOnce( KeyEvent.VK_ESCAPE ) ) {
-					current_maze = -1;
-					break;
-				}
-
+			while (objectupdatetick > 0) {
+				objectupdatetick --;
+				player = update_objects(maze, player);
 				// Poll the keyboard - may want to move into update object while loop
-				//keyboard.poll();
+				keyboard.poll();
 
-				//------------------------------------------------------------------------------------------------
-				//UPDATE GRAPHICS
-				//------------------------------------------------------------------------------------------------
-				if (objectupdatetick == 0 ){
-					try {	
-						totalFrameCount++;
-						backbuffer = buffer.getDrawGraphics(); //DRAW
-						//backbuffer.drawImage(maze.maze_img, maze.maze_x, maze.maze_y , maze.maze_pixel_width*maze_zoom, maze.maze_pixel_height*maze_zoom, null); 
 
-						if ((-(maze.maze_x / maze_zoom) + maze_subimage_width + 1) <= maze.maze_pixel_width )
-							maze_overscan_x = 1;
-						else
-							maze_overscan_x = 0;
+			}
 
-						if ((-(maze.maze_y / maze_zoom) + maze_subimage_height + 1) <= maze.maze_pixel_height)
-							maze_overscan_y = 1;
-						else
-							maze_overscan_y = 0;
-						backbuffer.drawImage(
-								maze.maze_img.getSubimage(
-										-maze.maze_x / maze_zoom , 
-										-maze.maze_y / maze_zoom ,  
-										maze_subimage_width + maze_overscan_x, 
-										maze_subimage_height + maze_overscan_y  )
-										, maze.maze_x % maze_zoom , maze.maze_y % maze_zoom , 
-										FRAME_WIDTH + maze_zoom * maze_overscan_x , 
-										FRAME_HEIGHT + maze_zoom * maze_overscan_y, 
-										null);
+			if(player.maze_completed && !fanfareplaying) { 
+				completed_delay = System.currentTimeMillis() + 2 * 500;
+				fanfareplaying = true;
+				try {
+					sampleplayback(fanfare);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				} catch (UnsupportedAudioFileException e1) {
+					e1.printStackTrace();
+				} catch (LineUnavailableException e1) {
+					e1.printStackTrace();
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			}
+			if(player.maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { //<- This line requires you to go on red and then go off of it again
+				completed_delay=0;
 
-						draw_player (backbuffer, maze, player);
-						backbuffer.setFont(timeFont); 
-						backbuffer.setColor(Color.white); 
-						backbuffer.fillRect(5, 20, 185, 25); 
-						backbuffer.setColor(Color.black); 
-						backbuffer.drawString(String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000), 10, 40); //TODO move to other side of screen if player is on top of it
-						backbuffer.drawString(String.format("FPS: %d", currentFPS), 10, 80);
-						if( !buffer.contentsLost() )  buffer.show();
+				try {
 
-						if( !buffer.contentsLost() )
+					Thread.sleep(2000); //transitional pause
 
-							buffer.show();
+				} 
+				catch (InterruptedException e) {
+
+				}
+				if (check_if_highscore(player.completedtime, scoreArrays)) {
+					String initials = enter_highscores(backbuffer, buffer, player);
+					if(initials != null){
+						scoreArrays.times[9] = player.completedtime;
+						scoreArrays.initials[9] = initials;
+						scoreArrays.pows[9] = player.rle;
+						sorthighscores(scoreArrays);
+						savehighscores(mazelist.get(current_maze).toString(), scoreArrays);
+						//	hstime = System.currentTimeMillis()
+						lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
 					}
-					finally {
-						// Release resources
+				}
+				try {
+					FileWriter file = new FileWriter("pow.txt");
+					file.write(player.rle);
+					file.flush();
+					file.close();
+					
+				} catch (IOException e2) {
+					e2.printStackTrace();
+				}
+				player.maze_completed=false;
+				break; //break out of while loop for inner game kernal
+			}
 
-						if( backbuffer != null ) 
+			if(keyboard.keyDownOnce( KeyEvent.VK_BACK_SPACE)) break;
+			// Should we exit?
+			if( keyboard.keyDownOnce( KeyEvent.VK_ESCAPE ) ) {
+				current_maze = 0;
+				break;
+			}
 
-							backbuffer.dispose();
+			// Poll the keyboard - may want to move into update object while loop
+			//keyboard.poll();
 
-						if( g2d != null ) 
+			//------------------------------------------------------------------------------------------------
+			//UPDATE GRAPHICS
+			//------------------------------------------------------------------------------------------------
+			if (objectupdatetick == 0 ){
+				try {	
+					totalFrameCount++;
+					backbuffer = buffer.getDrawGraphics(); //DRAW
+					//backbuffer.drawImage(maze.maze_img, maze.maze_x, maze.maze_y , maze.maze_pixel_width*maze_zoom, maze.maze_pixel_height*maze_zoom, null); 
 
-							g2d.dispose();
+					if ((-(maze.maze_x / maze_zoom) + maze_subimage_width + 1) <= maze.maze_pixel_width )
+						maze_overscan_x = 1;
+					else
+						maze_overscan_x = 0;
 
-					}
+					if ((-(maze.maze_y / maze_zoom) + maze_subimage_height + 1) <= maze.maze_pixel_height)
+						maze_overscan_y = 1;
+					else
+						maze_overscan_y = 0;
+					backbuffer.drawImage(
+							maze.maze_img.getSubimage(
+									-maze.maze_x / maze_zoom , 
+									-maze.maze_y / maze_zoom ,  
+									maze_subimage_width + maze_overscan_x, 
+									maze_subimage_height + maze_overscan_y  )
+									, maze.maze_x % maze_zoom , maze.maze_y % maze_zoom , 
+									FRAME_WIDTH + maze_zoom * maze_overscan_x , 
+									FRAME_HEIGHT + maze_zoom * maze_overscan_y, 
+									null);
+
+					draw_player (backbuffer, maze, player);
+					backbuffer.setFont(timeFont); 
+					backbuffer.setColor(Color.white); 
+					backbuffer.fillRect(5, 20, 185, 25); 
+					backbuffer.setColor(Color.black); 
+					backbuffer.drawString(String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000), 10, 40); //TODO move to other side of screen if player is on top of it
+					backbuffer.drawString(String.format("FPS: %d", currentFPS), 10, 80);
+					if( !buffer.contentsLost() )  buffer.show();
+
+					if( !buffer.contentsLost() )
+
+						buffer.show();
+				}
+				finally {
+					// Release resources
+
+					if( backbuffer != null ) 
+
+						backbuffer.dispose();
+
+					if( g2d != null ) 
+
+						g2d.dispose();
+
 				}
 			}
 		}
-	}
 
-	
+	}
 	
 	
 	public Player powrecord(Player player) {
@@ -499,7 +509,7 @@ public class Mazerush extends JFrame {
 	public int hsletter_x(int i, Maze maze) {return ( maze.maze_x + hs_chars_xy[i][0] * maze_zoom);}
 	public int hsletter_y(int i, Maze maze) {return ( maze.maze_y + hs_chars_xy[i][1]* maze_zoom);}
 
-	public String enter_highscores(Graphics background_graphics, BufferStrategy buffer, int spritesheet_player_width, int spritesheet_player_height, Player player){
+	public String enter_highscores(Graphics background_graphics, BufferStrategy buffer, Player player){
 		int highscore_enter_delay = 3;
 		String initials = null;
 		Graphics highscore_graphics=null;
@@ -1129,6 +1139,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 	public static JSONArray findmazefiles() {
 
 		JSONArray mazelist = new JSONArray();
+		mazelist.add("dummy");
 		
 		Path dir = Paths.get("");
 		dir = dir.resolve("mazes");
@@ -1155,8 +1166,8 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		Font splashFont = new Font("SansSerif", Font.BOLD, 20);
 		player.player_moving_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
-		int spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
-		int spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
+		player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
+		player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
 		graphics.setFont(splashFont);
 		graphics.setColor(Color.white);
 		BufferedImage mazeimage = null;
@@ -1169,7 +1180,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			} catch (IOException e) {
 			}
 
-			player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_facing_direction * 16, spritesheet_player_width, spritesheet_player_height);
+			player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16, player.player_facing_direction * 16, player.spritesheet_player_width, player.spritesheet_player_height);
 			graphics.drawString(mazelist.get(topmaze).toString(), thumbnailwidth * thumbnailzoom + player.player_width, y + mazeimage.getHeight() / 2);
 			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), 0, y, thumbnailwidth * thumbnailzoom, thumbnailheight * thumbnailzoom, null);
 			graphics.drawImage(player_img, player.player_x, player.player_y, player.player_width, player.player_height, null);
@@ -1191,8 +1202,8 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		player.player_moving_direction = 0;
 		player.player_x = 0;
 		player.player_y = 0;		
-	
-		while(!(keyboard.keyDown( KeyEvent.VK_ENTER ) || keyboard.keyDown( KeyEvent.VK_ESCAPE )))
+
+		while(!(keyboard.keyDown( KeyEvent.VK_ENTER ) || keyboard.keyDown( KeyEvent.VK_ESCAPE ) || keyboard.keyDown( KeyEvent.VK_R )))
 		{
 			Graphics graphics = buffer.getDrawGraphics();
 
@@ -1223,7 +1234,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			}
 			if(cursory < 0) {
 				cursory += 1;
-				if(listlocation > 0)
+				if(listlocation > 1)
 					listlocation--;
 			}
 		}
@@ -1231,8 +1242,11 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			selectTransition3D(buffer, listlocation, cursory, thumbnailzoom, thumbnailheight, thumbnailwidth, mazelist);
 			return(listlocation+cursory);
 		}
+		else if( keyboard.keyDown( KeyEvent.VK_R )) {
+			return((listlocation+cursory)*-1);
+		}
 		else
-			return(-1);
+			return(0); //if escape pressed
 	}
 	public static void selectTransition(BufferStrategy buffer, int listlocation, int cursory, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, JSONArray mazelist) {
 		float tframes = 32;
