@@ -187,7 +187,7 @@ public class Mazerush extends JFrame {
 		player.spritesheet_player_width = 0;
 		player.spritesheet_player_height = 0;	
 		try {
-			URL player_url = new URL("file:resources/spritesheet7.png");
+			URL player_url = new URL("file:resources/spritesheet10.png");
 			player.spritesheet = ImageIO.read(player_url);
 			 player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 			 player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
@@ -226,53 +226,61 @@ public class Mazerush extends JFrame {
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx, scoreArrays);
 
 			doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d);
+	
 				}
 	}
+	
+	public void initmazerun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays) {
+		player.player_x=maze_zoom;
+		player.player_y=maze_zoom;
+		player.player_moving_direction = 0;
+		player.player_dx = player.player_dy = maze_zoom / player_speed;
+		player.AnimationFrame = 0;
+		maze.maze_x = 0;  //all mazes start at 0,0
+		maze.maze_y = 0;  //could change so that we look for the mazeorigincolor
+		maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
+		maze.maze_pixel_width = maze.maze_img.getWidth();
+		maze.maze_pixel_height = maze.maze_img.getHeight();	
+	}
+	public long getmazeruntime(String maze_pow, int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays, Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d){
+/*		//------------------------------------POW TEST CODE ----------------
+		String maze_name =  mazelist.get(current_maze).toString();
+		JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
+	*/	
+	//	JSONArray maze_pow = getpow(hstable);
 
+		//		if (maze_pow != null) {
+		//			if (maze_pow.get(0) != null) {
+		if (maze_pow.length() >0) {
+			player.powplayback_enabled = true;
+			player.powtick = 0;
+			player.rle = maze_pow;
+		}		
+		else return(-1);
+		initmazerun(current_maze, player, mazelist, maze, scoreArrays);
+		while(!player.maze_completed){ //TODO find a condition
+			player = update_objects(maze, player);
+		}
+		return(player.completedtime);
+	}
 	public void doMazeRun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays, Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d){
-		int lasthighscoreidx = 0;
-		File fanfare = new File("resources/fanfare1.wav");
 		boolean fanfareplaying = false;
 		long completed_delay = 0;
-		Font timeFont = new Font("SansSerif", Font.BOLD, 20); 
-		int	maze_overscan_x = 0;
-		int maze_overscan_y = 0;
-
+		File fanfare = new File("resources/fanfare1.wav");
+		int lasthighscoreidx = -1;
+		
 		if(current_maze != 0) {
 			player.powplayback_enabled = false; // default
 			if(current_maze < 0){
 				current_maze *= -1;
-				//------------------------------------POW TEST CODE ----------------
-				String maze_name =  mazelist.get(current_maze).toString();
-				JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
-				
-				JSONArray maze_pow = getpow(hstable);
-				if (maze_pow != null) {
-					if (maze_pow.get(0) != null) {
-						if (maze_pow.get(0).toString().length() >0) {
-							player.powplayback_enabled = true;
-							player.powtick = 0;
-							player.rle = maze_pow.get(0).toString();
-							System.out.println("powplayback enabled");
-						}
-					}
-				}			
 			}
-			player.player_x=maze_zoom;
-			player.player_y=maze_zoom;
-			player.player_moving_direction = 0;
-			player.player_dx = player.player_dy = maze_zoom / player_speed;
-			player.AnimationFrame = 0;
-			maze.maze_x = 0;  //all mazes start at 0,0
-			maze.maze_y = 0;  //could change so that we look for the mazeorigincolor
-			maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
-			maze.maze_pixel_width = maze.maze_img.getWidth();
-			maze.maze_pixel_height = maze.maze_img.getHeight();
-			//System.out.println(maze.maze_pixel_width);
-			fanfareplaying = false;
+			initmazerun(current_maze, player, mazelist, maze, scoreArrays);
 			objectupdatetick = 0;
 		}
-
+		Font timeFont = new Font("SansSerif", Font.BOLD, 20); 
+		int	maze_overscan_x = 0;
+		int maze_overscan_y = 0;
+		
 		while( current_maze > 0 ) 
 		{
 			//inner kernel loop starts here
@@ -286,7 +294,6 @@ public class Mazerush extends JFrame {
 
 
 			}
-
 			if(player.maze_completed && !fanfareplaying) { 
 				completed_delay = System.currentTimeMillis() + 2 * 500;
 				fanfareplaying = true;
@@ -1059,7 +1066,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			//String temp =(String)scores.get(index);
 			//long time = Long.parseLong(temp);
 			long time = scoreArrays.times[index];
-			if(index == lasthighscoreidx)
+			if(index == lasthighscoreidx) //TODO does not work, need to fix
 				graphics.setColor(Color.blue);
 			else
 				graphics.setColor(Color.black);
