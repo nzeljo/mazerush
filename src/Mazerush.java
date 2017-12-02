@@ -125,6 +125,7 @@ public class Mazerush extends JFrame {
 		player_dy = player_dx,
 		player_moving_direction = 0,
 		player_facing_direction = 0;
+		boolean moving = false;
 		int player_width = 0;
 		int player_height = 0;
 		int player_center_w = 0;
@@ -224,9 +225,26 @@ public class Mazerush extends JFrame {
 		// GAME KERNAL
 		while(current_maze>0){
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx, scoreArrays);
-
+			if(current_maze >0){
 			doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d);
-	
+			}
+			else if (current_maze < 0) {
+						//------------------------------------POW TEST CODE ----------------
+				current_maze *= -1;
+				String maze_name =  mazelist.get(current_maze).toString();
+				JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
+				
+				JSONArray maze_pow = getpow(hstable);
+
+						if (maze_pow != null) {
+							if (maze_pow.get(0) != null) {
+								String mazepowstring = (String)maze_pow.get(0);
+		//	getmazeruntime(mazepowstring, current_maze, player, mazelist, maze, scoreArrays);
+			System.out.println(getmazeruntime(mazepowstring, current_maze, player, mazelist, maze, scoreArrays));
+			player.maze_completed=false;
+			}
+							}
+						}
 				}
 	}
 	
@@ -236,21 +254,16 @@ public class Mazerush extends JFrame {
 		player.player_moving_direction = 0;
 		player.player_dx = player.player_dy = maze_zoom / player_speed;
 		player.AnimationFrame = 0;
+		player.maze_completed = false;
 		maze.maze_x = 0;  //all mazes start at 0,0
 		maze.maze_y = 0;  //could change so that we look for the mazeorigincolor
 		maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
 		maze.maze_pixel_width = maze.maze_img.getWidth();
 		maze.maze_pixel_height = maze.maze_img.getHeight();	
 	}
-	public long getmazeruntime(String maze_pow, int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays, Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d){
-/*		//------------------------------------POW TEST CODE ----------------
-		String maze_name =  mazelist.get(current_maze).toString();
-		JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
-	*/	
-	//	JSONArray maze_pow = getpow(hstable);
+	public long getmazeruntime(String maze_pow, int current_maze, Player player, JSONArray mazelist, Maze maze, 
+			ScoreArrays scoreArrays){
 
-		//		if (maze_pow != null) {
-		//			if (maze_pow.get(0) != null) {
 		if (maze_pow.length() >0) {
 			player.powplayback_enabled = true;
 			player.powtick = 0;
@@ -289,6 +302,20 @@ public class Mazerush extends JFrame {
 			while (objectupdatetick > 0) {
 				objectupdatetick --;
 				player = update_objects(maze, player);
+				if((player.AnimationFrame % (AnimationSpeed*2)) == 0 && player.moving) {
+					File footsteps = new File("resources/footstep3.wav");
+					try {
+						sampleplayback(footsteps);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					} catch (UnsupportedAudioFileException e1) {
+						e1.printStackTrace();
+					} catch (LineUnavailableException e1) {
+						e1.printStackTrace();
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+				}
 				// Poll the keyboard - may want to move into update object while loop
 				keyboard.poll();
 
@@ -853,7 +880,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		return name.matches("[0-9]+");
 	}
 	public Player update_player(boolean scrollonly, Maze maze, Player player){
-		boolean moving = false;
+		player.moving = false;
 		// Check pow
 		int powdir = powplayback(player);
 		if (player.powplayback_enabled) {
@@ -863,7 +890,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		player.player_moving_direction = 0; /* clear before setting bits for directions */
 		if( keyboard.keyDown( KeyEvent.VK_W ) || keyboard.keyDown( KeyEvent.VK_UP ) || ((powdir & pup) > 0))
 		{
-			moving = true;
+			player.moving = true;
 			player.player_moving_direction |= pup;	
 			if (player_on_path(0, -player.player_dy, maze, player)) 
 				if ((maze_fits_on_screen(0, player.player_dy, maze) || scrollonly)  && player.player_y <= FRAME_HEIGHT /2)
@@ -874,7 +901,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		}
 		if( keyboard.keyDown( KeyEvent.VK_A ) || keyboard.keyDown( KeyEvent.VK_LEFT ) || ((powdir & pleft) > 0) )
 		{
-			moving = true;
+			player.moving = true;
 			player.player_moving_direction |= pleft;
 			if (player_on_path(-player.player_dx, 0, maze, player)) 
 				if ((maze_fits_on_screen(player.player_dx, 0, maze) || scrollonly) && player.player_x <= FRAME_WIDTH /2)
@@ -885,7 +912,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		}
 		if( keyboard.keyDown( KeyEvent.VK_S ) || keyboard.keyDown( KeyEvent.VK_DOWN ) || ((powdir & pdown) > 0) )
 		{
-			moving = true;
+			player.moving = true;
 			player.player_moving_direction |= pdown;	
 			if (player_on_path(0, player.player_dy, maze, player)) 
 				if ((maze_fits_on_screen(0, -player.player_dy, maze) || scrollonly) && player.player_y >= FRAME_HEIGHT /2)
@@ -896,7 +923,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		}
 		if( keyboard.keyDown( KeyEvent.VK_D ) || keyboard.keyDown( KeyEvent.VK_RIGHT ) || ((powdir & pright) > 0) )
 		{
-			moving = true;
+			player.moving = true;
 			player.player_moving_direction |= pright;
 			if (player_on_path(player.player_dx, 0, maze ,player)) 
 				if ((maze_fits_on_screen(-player.player_dx, 0, maze) || scrollonly) && player.player_x >= FRAME_WIDTH /2)
@@ -905,7 +932,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					if (player_on_screen(player.player_dx, 0, player) )
 						player.player_x += player.player_dx;
 		}
-		if(moving){
+		if(player.moving){
 			if ( (player.player_moving_direction & pup) > 0) player.player_facing_direction = 1;
 			if ( (player.player_moving_direction & pdown) > 0) player.player_facing_direction = 3;
 			if ( (player.player_moving_direction & pleft) > 0) player.player_facing_direction = 2;
@@ -914,20 +941,7 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			player.AnimationFrame ++;
 			if(player.AnimationFrame >= MaxAnimationFrames)
 				player.AnimationFrame = 0;
-			if((player.AnimationFrame % (AnimationSpeed*2)) == 0) {
-				File footsteps = new File("resources/footstep3.wav");
-				try {
-					sampleplayback(footsteps);
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				} catch (UnsupportedAudioFileException e1) {
-					e1.printStackTrace();
-				} catch (LineUnavailableException e1) {
-					e1.printStackTrace();
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			}
+
 		}
 		else {
 		player.player_moving_direction = pstill;
