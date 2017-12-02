@@ -1,0 +1,53 @@
+webserver:
+-----------------
+check scores:
+	Q:how long does it take to complete this maze?
+	A:this maze?
+	Q:how long does it take to complete this png given this pow?
+	A: 12278
+	
+	Q:for Maze_png is this a top 10 for remote table
+	A: yes
+
+		1. Add score to remote hs_table
+		2. Update local copy of remote hs_table
+
+
+submit score to server:
+	1. if in local top 10 submit (png, initials, pow) to remote server
+	
+
+TO DO:
+	local and remote hs tables (read only)
+	store local and global highscores as md5sum.local_highscores  md5sum.global_highscores
+		
+
+
+	server:
+		1. opens port
+			what port? 80
+		2. listens for connections
+		3. responds to commands:
+			boolean maze_md5sum Submit_maze(png)             true=mazefound false=maze not found
+			boolean submit_pow(maze_md5sum, pow, initials)   true=mazefound false=maze not found
+			JSONObject get_global_highscores(maze_md5sum)
+			String put_mazehashes(JSONObject mazes_md5sums)   return string "10 mazes, 100Kbytes"
+			mazes.zip get_missing_mazes(JSONObject mazes_md5sums)
+
+			
+			
+
+			
+when client starts it will try to connect
+if successful , client submits all .png names in /mazes to server
+server responds with # and size of all mazes not found.
+client asks user to confirm download
+maze names are pulled from .png text block for mazeselect.
+
+any png in /mazes is shown in maze_select
+if maze is not 64x64 then show warning
+when a new highscore is submitted to server, client will ask user for the name by which this maze will be stored
+if name is same as other than dissallow
+name gets store in text block of png, png gets md5hash, png gets saved as md5hash, old png gets moved to /original_mazes
+
+
