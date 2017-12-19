@@ -66,15 +66,6 @@ public class Mazerush extends JFrame {
 	static final int
 	widthtenth = FRAME_WIDTH / 10,
 	heighttenth = FRAME_HEIGHT / 10,
-	splashtextwaveheight = 10,
-	goalsplashx = 0,
-	goalsplashy = 5,
-	creditssplashx = 0,
-	creditssplashy = 9,
-	anykeysplashx = 5,
-	anykeysplashy = 9,
-	keyssplashx = 0,
-	keyssplashy = 1,
 	spritesheeth = 4,  //how many sprite frames in spritesheet horizontally
 	spritesheetv = 5,  //how many sprite frames in spritesheet vertically
 	mazepathcolor = 0xff000000,
@@ -159,6 +150,27 @@ public class Mazerush extends JFrame {
 		boolean powenabled = false;
 		}
 	
+	public void startFrameTimers(){
+		TimerTask updateFPS = new TimerTask() {
+			public void run() {
+				currentFPS = totalFrameCount;
+				totalFrameCount = 0;
+			}
+		};
+		Timer t = new Timer();
+		t.scheduleAtFixedRate(updateFPS, 1000, 1000);
+
+		TimerTask objectupdatetimer = new TimerTask() {
+			public void run() {
+				objectupdatetick ++;
+				
+			}
+		};
+		Timer obt = new Timer();
+		obt.scheduleAtFixedRate(objectupdatetimer, objectupdate_bandwidth, objectupdate_bandwidth);
+		
+	}
+	
 	public void run() {
 		Player player = new Player();
 		
@@ -184,6 +196,7 @@ public class Mazerush extends JFrame {
 		g2d = bi.createGraphics();
 		g2d.setColor( background );
 		// .....
+		startFrameTimers();
 		splashscreen(buffer);
 		player.spritesheet = null;
 		player.spritesheet_player_width = 0;
@@ -202,24 +215,6 @@ public class Mazerush extends JFrame {
 		Maze maze = new Maze();
 	//TODO	boolean fanfareplaying = false;
 		int lasthighscoreidx = -1;
-
-		TimerTask updateFPS = new TimerTask() {
-			public void run() {
-				currentFPS = totalFrameCount;
-				totalFrameCount = 0;
-			}
-		};
-		Timer t = new Timer();
-		t.scheduleAtFixedRate(updateFPS, 1000, 1000);
-
-		TimerTask objectupdatetimer = new TimerTask() {
-			public void run() {
-				objectupdatetick ++;
-				
-			}
-		};
-		Timer obt = new Timer();
-		obt.scheduleAtFixedRate(objectupdatetimer, objectupdate_bandwidth, objectupdate_bandwidth);
 		
 		// GAME KERNAL
 		// GAME KERNAL
@@ -227,28 +222,28 @@ public class Mazerush extends JFrame {
 		while(current_maze>0){
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx, scoreArrays);
 			if(current_maze >0){
-			doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d);
+				doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d);
 			}
 			else if (current_maze < 0) {
-						//------------------------------------POW TEST CODE ----------------
+				//------------------------------------POW TEST CODE ----------------
 				current_maze *= -1;
 				String maze_name =  mazelist.get(current_maze).toString();
 				JSONObject hstable = (JSONObject) gethighscoretable(maze_name ); 
-				
+
 				JSONArray maze_pow = getpow(hstable);
 
-						if (maze_pow != null) {
-							if (maze_pow.get(0) != null) {
-								String mazepowstring = (String)maze_pow.get(0);
-		//	getmazeruntime(mazepowstring, current_maze, player, mazelist, maze, scoreArrays);
-			System.out.println(getmazeruntime(mazepowstring, current_maze, player, mazelist, maze, scoreArrays));
-			player.maze_completed=false;
-			}
-							}
-						}
+				if (maze_pow != null) {
+					if (maze_pow.get(0) != null) {
+						String mazepowstring = (String)maze_pow.get(0);
+						//	getmazeruntime(mazepowstring, current_maze, player, mazelist, maze, scoreArrays);
+						System.out.println(getmazeruntime(mazepowstring, current_maze, player, mazelist, maze, scoreArrays));
+						player.maze_completed=false;
+					}
 				}
+			}
+		}
 	}
-	
+
 	public void initmazerun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays) {
 		player.player_x=maze_zoom;
 		player.player_y=maze_zoom;
@@ -294,7 +289,9 @@ public class Mazerush extends JFrame {
 		Font timeFont = new Font("SansSerif", Font.BOLD, 20); 
 		int	maze_overscan_x = 0;
 		int maze_overscan_y = 0;
-		
+		boolean FrameValid = false;
+		File footsteps = new File("resources/footstep3.wav");
+
 		while( current_maze > 0 ) 
 		{
 			//inner kernel loop starts here
@@ -303,8 +300,8 @@ public class Mazerush extends JFrame {
 			while (objectupdatetick > 0) {
 				objectupdatetick --;
 				player = update_objects(maze, player);
+				FrameValid = false;
 				if((player.AnimationFrame % (AnimationSpeed*2)) == 0 && player.moving) {
-					File footsteps = new File("resources/footstep3.wav");
 					try {
 						sampleplayback(footsteps);
 					} catch (IOException e1) {
@@ -356,11 +353,10 @@ public class Mazerush extends JFrame {
 						scoreArrays.pows[9] = player.rle;
 						sorthighscores(scoreArrays);
 						savehighscores(mazelist.get(current_maze).toString(), scoreArrays);
-						//	hstime = System.currentTimeMillis()
 						lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
 					}
 				}
-				try {
+				/*try {
 					FileWriter file = new FileWriter("pow.txt");
 					file.write(player.rle);
 					file.flush();
@@ -368,10 +364,12 @@ public class Mazerush extends JFrame {
 					
 				} catch (IOException e2) {
 					e2.printStackTrace();
-				}
+				}*/
+			
 				player.maze_completed=false;
 				break; //break out of while loop for inner game kernal
 			}
+			keyboard.poll();
 
 			if(keyboard.keyDownOnce( KeyEvent.VK_BACK_SPACE)) break;
 			// Should we exit?
@@ -380,13 +378,11 @@ public class Mazerush extends JFrame {
 				break;
 			}
 
-			// Poll the keyboard - may want to move into update object while loop
-			//keyboard.poll();
 
 			//------------------------------------------------------------------------------------------------
 			//UPDATE GRAPHICS
 			//------------------------------------------------------------------------------------------------
-			if (objectupdatetick == 0 ){
+			if (objectupdatetick == 0 && FrameValid == false ){
 				try {	
 					totalFrameCount++;
 					backbuffer = buffer.getDrawGraphics(); //DRAW
@@ -419,11 +415,10 @@ public class Mazerush extends JFrame {
 					backbuffer.setColor(Color.black); 
 					backbuffer.drawString(String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000), 10, 40); //TODO move to other side of screen if player is on top of it
 					backbuffer.drawString(String.format("FPS: %d", currentFPS), 10, 80);
-					if( !buffer.contentsLost() )  buffer.show();
-
 					if( !buffer.contentsLost() )
-
 						buffer.show();
+					FrameValid = true; //Frame limiting
+
 				}
 				finally {
 					// Release resources
@@ -464,7 +459,7 @@ public class Mazerush extends JFrame {
 		else {
 			player.rle = "" + powdir;
 		}
-		System.out.println(player.rle); 
+		//System.out.println(player.rle); 
 		return(player);
 	}
 	
@@ -1166,16 +1161,15 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		Path dir = Paths.get("");
 		dir = dir.resolve("mazes");
 		
-		System.out.format("%s%n",dir.toAbsolutePath());
+		//System.out.format("%s%n",dir.toAbsolutePath());
 		try (DirectoryStream<Path> stream =
 				Files.newDirectoryStream(dir, "*.png")) {
 			for (Path entry: stream) {
 				String fname = new String(entry.getFileName().toString());
-				
-				if(fname.contains("maze")) {	
+				mazelist.add(fname);
+				/*if(fname.contains("maze")) {	
 					mazelist.add(fname);
-					
-				}
+				}*/
 			}
 		} catch (IOException x) {
 			System.err.println(x);
@@ -1269,7 +1263,8 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		player.AnimationFrame = 0;
 		player.player_moving_direction = 0;
 		player.player_x = 0;
-		player.player_y = 0;		
+		player.player_y = 0;
+		/*
 		TimerTask objectupdatetimer = new TimerTask() {
 			public void run() {
 				objectupdatetick ++;
@@ -1278,13 +1273,15 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		};
 		Timer obt = new Timer();
 		obt.scheduleAtFixedRate(objectupdatetimer, mazeselect_bandwidth, mazeselect_bandwidth);
-		boolean newkeypressed = false;
+		*/
 		converthighscores(gethighscoretable(mazelist.get(listlocation+cursory).toString()), scoreArrays);
 		Graphics graphics = buffer.getDrawGraphics();
+		
 		while(!(keyboard.keyDown( KeyEvent.VK_ENTER ) || keyboard.keyDown( KeyEvent.VK_ESCAPE ) || keyboard.keyDown( KeyEvent.VK_R )))
 		{
-			while (objectupdatetick > 0) {
+			while ((objectupdatetick >> 2) > 0) {
 				objectupdatetick = 0;
+
 				graphics.setColor(Color.BLACK);
 				graphics.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 				player.player_y = cursory * thumbnailzoom * thumbnailheight;
@@ -1296,13 +1293,10 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3/5, 0, lasthighscoreidx);
 				else
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3/5, 0, -1);
-				//highlightmaze(listlocation);
-
 				buffer.show();
-				//
+				
 			}
-			//	while(keyboard.poll()) { }
-			//	while(!keyboard.poll()) { }
+
 			keyboard.poll();
 			if( keyboard.keyDownOnce( KeyEvent.VK_W ) || keyboard.keyDownOnce( KeyEvent.VK_UP )){
 				cursory -= 1;
@@ -1524,6 +1518,17 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		}
 	}
 	*/
+	final static int
+	splashtextwaveheight = 10,
+	goalsplashx = 0,
+	goalsplashy = 5,
+	creditssplashx = 0,
+	creditssplashy = 9,
+	anykeysplashx = 5,
+	anykeysplashy = 9,
+	keyssplashx = 0,
+	keyssplashy = 1;
+	
 	public static void splashtext(Graphics splashgraphics, double yoffset) {
 		Font splashFont = new Font("SansSerif", Font.BOLD, 20);
 
@@ -1548,44 +1553,63 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 			y += fontheight;
 		}
 	}
-	public static void splashscreen(BufferStrategy buffer) {
+	public static void splashscreen(BufferStrategy frontBuffer) {
 		double yoffset = 0;
 		double waveangle = 0;
-		double wavespeed = 0.05;
+		double wavespeed = 0.07;
 		BufferedImage splashimage = null;
 		BufferedImage titleimage = null;
 		try {	
 			splashimage = ImageIO.read(new File("resources/splash2.png"));
-			//ClassLoader cl = .getClass().getClassLoader();
-			//InputStream is = getClass( ).getResourceAsStream("splash2.png");
-
+			System.out.print("'splashimage':");
+			System.out.println(splashimage.getColorModel());
+		
 		} catch (IOException e) {
 		}
 		try {	
 			titleimage = ImageIO.read(new File("resources/gametitle.png"));	       
+			System.out.print("'titleimage':");
+			System.out.println(titleimage.getColorModel());
 		} catch (IOException e) {
 		}
-		Graphics graphics = buffer.getDrawGraphics();
+		BufferedImage splashtext_buffer = new BufferedImage(FRAME_WIDTH,FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
+		Graphics g2d = splashtext_buffer.getGraphics();
+		splashtext(g2d,0);
+		System.out.print("'splashtext':");
+		System.out.println(splashtext_buffer.getColorModel());
+
+		//BufferStrategy backBuffer = canvas.getBufferStrategy();
+		//Graphics backGraphics = backBuffer.getDrawGraphics();
+		BufferedImage backBuffer = new BufferedImage(FRAME_WIDTH,FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
+		Graphics backGraphics = backBuffer.createGraphics(); 
+		backGraphics.drawImage(splashimage, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, null);
+		backGraphics.drawImage(titleimage, FRAME_WIDTH / 2 - titleimage.getWidth() / 2, FRAME_HEIGHT / 4, null);
+		
+		Graphics frontGraphics = frontBuffer.getDrawGraphics();
+		System.out.print("'backBuffer':");
+		System.out.println(backBuffer.getColorModel());
+		
+		boolean framevalid = false;
 		while(!keyboard.poll()) {
-
-			graphics.drawImage(splashimage, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, null);
-			graphics.drawImage(titleimage, FRAME_WIDTH / 2 - titleimage.getWidth() / 2, FRAME_HEIGHT / 4, null);
-			yoffset = Math.sin(waveangle) * splashtextwaveheight;
-			waveangle += wavespeed;
-			splashtext(graphics, yoffset);
-			if( !buffer.contentsLost() )
-				buffer.show();
-			try {
-
-				Thread.sleep(KernalSleepTime);
-
-			} 
-			catch (InterruptedException e) {
-
+			//_update 
+			while (objectupdatetick > 0) {
+				objectupdatetick --;
+				yoffset = Math.sin(waveangle) * splashtextwaveheight;
+				waveangle += wavespeed;
+				framevalid = false;
 			}
-			
+			//_draw
+			if (!framevalid){
+				frontGraphics.drawImage(backBuffer,0,0,null);
+				frontGraphics.drawImage(splashtext_buffer, 0,(int) yoffset, null);
+
+				if( !frontBuffer.contentsLost() )
+					frontBuffer.show();
+				framevalid = true;
+			}
 		}
-		while(keyboard.poll()){}
+		frontGraphics.dispose();
+		while(keyboard.poll()){} //wait for key to be released
 	}
 	public static void main( String[] args ) {
 		Mazerush app = new Mazerush();
