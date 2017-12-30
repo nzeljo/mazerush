@@ -23,7 +23,8 @@ import java.nio.file.Paths;
 import java.util.Random;
 import java.util.TimerTask;
 import java.util.Timer;
-
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
@@ -49,6 +50,7 @@ public class Mazerush extends JFrame {
 	player_speed = 8, //1=maze_zoom pixels per frame ; 8=maze_zoom/8 pixels per frame
 	objectupdate_bandwidth = 14, //Was 14, //time in milliseconds between object updates
 	mazeselect_bandwidth = 200,
+	coinprobability = 10,
 	maze_subimage_width = FRAME_WIDTH / maze_zoom,
 	maze_subimage_height = FRAME_HEIGHT / maze_zoom,
 	KernalSleepTime = 10,
@@ -132,6 +134,27 @@ public class Mazerush extends JFrame {
 		boolean powplayback_enabled = false;
 		int spritesheet_player_height, spritesheet_player_width;
 	}
+	class Coin {
+		BufferedImage Spritesheet; 
+		{
+			try {
+				Spritesheet = ImageIO.read(new URL("file:playersprites/coin.png"));
+			} catch (IOException e) {
+			}
+		}
+
+		int
+		x = -1,
+		y = -1,
+		center_w = Spritesheet.getWidth(null) / spritesheeth,
+		center_h = Spritesheet.getHeight(null) / spritesheetv,
+		width = center_w * 2,
+		height = center_h * 2,
+
+		AnimationFrame = -1;
+		boolean collected = false;
+		
+	}
 	class ScoreArrays {
 		Long[] times = new Long[10];
 		String[] initials = new String[10];
@@ -212,6 +235,7 @@ public class Mazerush extends JFrame {
 			 player.player_center_h = player.player_height /2;
 		} catch (IOException e) {
 		}
+		
 		Maze maze = new Maze();
 	//TODO	boolean fanfareplaying = false;
 		int lasthighscoreidx = -1;
@@ -273,6 +297,7 @@ public class Mazerush extends JFrame {
 		return(player.completedtime);
 	}
 	public void doMazeRun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays, Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d){
+		List coins = new ArrayList();
 		boolean fanfareplaying = false;
 		long completed_delay = 0;
 		File fanfare = new File("resources/fanfare1.wav");
@@ -284,6 +309,7 @@ public class Mazerush extends JFrame {
 				current_maze *= -1;
 			}
 			initmazerun(current_maze, player, mazelist, maze, scoreArrays);
+			placeCoins(coins, maze);
 			objectupdatetick = 0;
 		}
 		Font timeFont = new Font("SansSerif", Font.BOLD, 20); 
@@ -407,7 +433,7 @@ public class Mazerush extends JFrame {
 									FRAME_WIDTH + maze_zoom * maze_overscan_x , 
 									FRAME_HEIGHT + maze_zoom * maze_overscan_y, 
 									null);
-
+					draw_coin(backbuffer, coins, maze);
 					draw_player (backbuffer, maze, player);
 					backbuffer.setFont(timeFont); 
 					backbuffer.setColor(Color.white); 
@@ -509,7 +535,30 @@ public class Mazerush extends JFrame {
 		return(player);
 	} */
 
-	
+	public List placeCoins(List coins, Maze maze){
+		Random rnd = new Random();
+		for(int my=0; my<maze.maze_pixel_height; my++)
+			for(int mx=0; mx<maze.maze_pixel_width; mx++){
+				if(maze.maze_img.getRGB(mx,my)==mazepathcolor){
+					if(rnd.nextInt(0xff) < coinprobability){
+						placeCoin(coins, mx, my);
+						System.out.print("Coin X:");
+						System.out.print(mx);
+						System.out.print(" Coin Y:");
+						System.out.println(my);
+					}
+				}
+			}
+		return coins;
+	}
+	public void placeCoin(List coins, int x, int y){
+		Coin coin = new Coin();
+		coin.x = x;
+		coin.y = y;
+		coin.collected = false;
+		coin.AnimationFrame = 0;
+		coins.add(coin);
+	}
 	
 	public Player update_objects(Maze maze, Player player){
 
@@ -690,7 +739,19 @@ public class Mazerush extends JFrame {
 		backbuffer.drawImage(player_img, player.player_x - player.player_center_w, player.player_y - player.player_center_h , player.player_width, player.player_height, null);
 		//java2s.com/Tutorial/Java/0261__2D-Graphics/
 	}
-	
+	public void draw_coin (Graphics backbuffer, List coins, Maze maze) {
+		
+		Coin coin = (Coin) coins.get(0);
+		
+		BufferedImage coin_img = coin.Spritesheet.getSubimage(coin.AnimationFrame / AnimationSpeed * 16, 0,
+				coin.width /2, coin.height/2);
+		backbuffer.drawImage(coin_img, maze.maze_x + coin.x * maze_zoom - coin.center_w, maze.maze_y + coin.y * maze_zoom - coin.center_h , coin.width, coin.height, null);
+		coin.AnimationFrame ++;
+		if(coin.AnimationFrame >= MaxAnimationFrames)
+			coin.AnimationFrame = 0;
+		coins.set(0, coin);
+		//code from -> http://java2s.com/Tutorial/Java/0261__2D-Graphics/
+	}	
 public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player player){
 		
 		int pxright = (player.player_x + dx - maze.maze_x + player.player_center_w) /maze_zoom;
@@ -722,13 +783,17 @@ public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player
 		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only bottom and right cause outofbounds exception so we just check those
 			return(false);
 		
-			if (maze.maze_img.getRGB(pxleft, pytop) != 0xff000000 && maze.maze_img.getRGB(pxleft, pytop) != 0xff00ff00 && maze.maze_img.getRGB(pxleft, pytop) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxleft, pytop) != mazepathcolor && maze.maze_img.getRGB(pxleft, pytop) != mazeorigincolor 
+					&& maze.maze_img.getRGB(pxleft, pytop) != mazegoalcolor) return (false);
 		
-			if (maze.maze_img.getRGB(pxright, pytop) != 0xff000000 && maze.maze_img.getRGB(pxright, pytop) != 0xff00ff00 && maze.maze_img.getRGB(pxright, pytop) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxright, pytop) != mazepathcolor && maze.maze_img.getRGB(pxright, pytop) != mazeorigincolor 
+					&& maze.maze_img.getRGB(pxright, pytop) != mazegoalcolor) return (false);
 		
-			if (maze.maze_img.getRGB(pxleft, pybottom) != 0xff000000 && maze.maze_img.getRGB(pxleft, pybottom) != 0xff00ff00 && maze.maze_img.getRGB(pxleft, pybottom) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxleft, pybottom) != mazepathcolor && maze.maze_img.getRGB(pxleft, pybottom) != mazeorigincolor 
+					&& maze.maze_img.getRGB(pxleft, pybottom) != mazegoalcolor) return (false);
 		
-			if (maze.maze_img.getRGB(pxright, pybottom) != 0xff000000 && maze.maze_img.getRGB(pxright, pybottom) != 0xff00ff00 && maze.maze_img.getRGB(pxright, pybottom) != 0xffff0000) return (false);
+			if (maze.maze_img.getRGB(pxright, pybottom) != mazepathcolor && maze.maze_img.getRGB(pxright, pybottom) != mazeorigincolor 
+					&& maze.maze_img.getRGB(pxright, pybottom) != mazegoalcolor) return (false);
 		
 		return (true);
 	}
