@@ -59,7 +59,7 @@ public class Mazerush extends JFrame {
 	pleft  = 0b0100,
 	pright = 0b1000,
 	pstill = 0,
-	AnimationSpeed = 10, // Higher number = slower
+	AnimationSpeed = 10, // was 10,Higher number = slower
 	MaxAnimationFrames = 4 * AnimationSpeed;
 	static String goalsplash = "Object: finish the maze as fast as possible",
 			keyssplash = "WASD or arrow keys to move\nEnter to skip forward\nBackspace to skip back",
@@ -740,16 +740,19 @@ public class Mazerush extends JFrame {
 		//java2s.com/Tutorial/Java/0261__2D-Graphics/
 	}
 	public void draw_coin (Graphics backbuffer, List coins, Maze maze) {
-		
-		Coin coin = (Coin) coins.get(0);
-		
-		BufferedImage coin_img = coin.Spritesheet.getSubimage(coin.AnimationFrame / AnimationSpeed * 16, 0,
-				coin.width /2, coin.height/2);
-		backbuffer.drawImage(coin_img, maze.maze_x + coin.x * maze_zoom - coin.center_w, maze.maze_y + coin.y * maze_zoom - coin.center_h , coin.width, coin.height, null);
-		coin.AnimationFrame ++;
-		if(coin.AnimationFrame >= MaxAnimationFrames)
-			coin.AnimationFrame = 0;
-		coins.set(0, coin);
+		Coin coin;
+
+		for(int thiscoin=0; thiscoin < coins.size(); thiscoin++) {
+			coin = (Coin) coins.get(thiscoin);
+
+			BufferedImage coin_img = coin.Spritesheet.getSubimage(coin.AnimationFrame / AnimationSpeed * 16, 0,
+					coin.width /2, coin.height/2);
+			backbuffer.drawImage(coin_img, maze.maze_x + coin.x * maze_zoom, maze.maze_y + coin.y * maze_zoom , coin.width, coin.height, null);
+			coin.AnimationFrame ++;
+			if(coin.AnimationFrame >= MaxAnimationFrames)
+				coin.AnimationFrame = 0;
+			coins.set(thiscoin, coin);
+		}
 		//code from -> http://java2s.com/Tutorial/Java/0261__2D-Graphics/
 	}	
 public boolean player_on_color(int pixelcolor, int dx, int dy, Maze maze, Player player){
