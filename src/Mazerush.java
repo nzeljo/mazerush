@@ -50,7 +50,7 @@ public class Mazerush extends JFrame {
 	player_speed = 8, //1=maze_zoom pixels per frame ; 8=maze_zoom/8 pixels per frame
 	objectupdate_bandwidth = 14, //Was 14, //time in milliseconds between object updates
 	mazeselect_bandwidth = 200,
-	coinprobability = 10,
+	coinprobability = 100, //was 10
 	maze_subimage_width = FRAME_WIDTH / maze_zoom,
 	maze_subimage_height = FRAME_HEIGHT / maze_zoom,
 	KernalSleepTime = 10,
@@ -740,14 +740,22 @@ public class Mazerush extends JFrame {
 		//java2s.com/Tutorial/Java/0261__2D-Graphics/
 	}
 	public void draw_coin (Graphics backbuffer, List coins, Maze maze) {
-		Coin coin;
+		Coin coin = (Coin) coins.get(0);
+		BufferedImage coin_img = coin.Spritesheet.getSubimage(coin.AnimationFrame / AnimationSpeed * 16, 0,
+				coin.width /2, coin.height/2);
 
+		
 		for(int thiscoin=0; thiscoin < coins.size(); thiscoin++) {
 			coin = (Coin) coins.get(thiscoin);
+			int coinx = maze.maze_x + coin.x * maze_zoom - coin.width/2 + maze_zoom/2;
+			int coiny = maze.maze_y + coin.y * maze_zoom - coin.height/2 + maze_zoom/2;
+			if ((coinx < (FRAME_WIDTH + coin.width) && coinx > -coin.width) && 
+					(coiny < (FRAME_HEIGHT + coin.height) && coiny > -coin.height))
 
-			BufferedImage coin_img = coin.Spritesheet.getSubimage(coin.AnimationFrame / AnimationSpeed * 16, 0,
-					coin.width /2, coin.height/2);
-			backbuffer.drawImage(coin_img, maze.maze_x + coin.x * maze_zoom, maze.maze_y + coin.y * maze_zoom , coin.width, coin.height, null);
+				backbuffer.drawImage(coin_img, 
+						maze.maze_x + coin.x * maze_zoom - coin.width/2 + maze_zoom/2, 
+						maze.maze_y + coin.y * maze_zoom - coin.height/2 + maze_zoom/2, 
+						coin.width, coin.height, null);
 			coin.AnimationFrame ++;
 			if(coin.AnimationFrame >= MaxAnimationFrames)
 				coin.AnimationFrame = 0;
