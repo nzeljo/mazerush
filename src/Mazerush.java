@@ -128,6 +128,8 @@ public class Mazerush extends JFrame {
 		int powcount = 0;
 		boolean powplayback_enabled = false;
 		int spritesheet_player_height, spritesheet_player_width;
+		int coinsCollected = 0;
+		int coinCollisions = 0;
 	}
 
 	class Coin {
@@ -314,6 +316,7 @@ public class Mazerush extends JFrame {
 				current_maze *= -1;
 			}
 			initmazerun(current_maze, player, mazelist, maze, scoreArrays);
+			coins.clear();
 			placeCoins(coins, maze);
 			objectupdatetick = 0;
 		}
@@ -323,8 +326,9 @@ public class Mazerush extends JFrame {
 		boolean FrameValid = false;
 		File footsteps = new File("resources/footstep3.wav");
 		File coin_collected_sound = new File("resources/135936__bradwesson__collectcoin.wav");
-		int coinsCollected = 0;
-
+		player.coinsCollected = 0;
+		player.coinCollisions = 0;
+		
 		while (current_maze > 0) {
 			// inner kernel loop starts here
 
@@ -332,9 +336,9 @@ public class Mazerush extends JFrame {
 				objectupdatetick--;
 				player = update_objects(maze, player);
 				
-				int coinCollisions = coinCollision(player, coins, maze);
-				coinsCollected += coinCollisions;
-				if (coinCollisions > 0) {
+				player.coinCollisions = coinCollision(player, coins, maze);
+				player.coinsCollected += player.coinCollisions;
+				if (player.coinCollisions > 0) {
 					try {
 						sampleplayback(coin_collected_sound);
 					} catch (IOException e1) {
@@ -475,7 +479,7 @@ public class Mazerush extends JFrame {
 										// player is on top of it
 					backbuffer.drawString(String.format("FPS: %d", currentFPS), 10, 80);
 					backbuffer.setColor(Color.red);
-					backbuffer.drawString(String.format("Coins: %d", coinsCollected), 10, 120);
+					backbuffer.drawString(String.format("Coins: %d", player.coinsCollected), 10, 120);
 					if (!buffer.contentsLost())
 						buffer.show();
 					FrameValid = true; // Frame limiting
@@ -499,6 +503,7 @@ public class Mazerush extends JFrame {
 
 	public Player powrecord(Player player) {
 		char powdir = (char) (65 + player.player_moving_direction);
+		char coindir = (char) 'Z';
 		char lastmove;
 		if (player.rle == null)
 			player.rle = "";
@@ -506,12 +511,16 @@ public class Mazerush extends JFrame {
 			// System.out.println(player.pow.rle);
 			lastmove = player.rle.charAt(player.rle.length() - 1);
 
-			if (lastmove == powdir) {
+			if (lastmove == powdir && player.coinCollisions == 0) {
 				player.powcount++;
 			} else {
 
 				player.rle += Integer.toString(player.powcount);
 				player.powcount = 0;
+				if(player.coinCollisions > 0) {
+					player.rle += coindir;
+					player.rle += Long.toString(player.completedtime);
+				}
 				player.rle += powdir;
 			}
 		} else {
@@ -542,8 +551,8 @@ public class Mazerush extends JFrame {
 
 	public List placeCoins(List coins, Maze maze) {
 		Random rnd = new Random();
-		for (int my = 0; my < maze.maze_pixel_height; my++)
-			for (int mx = 0; mx < maze.maze_pixel_width; mx++) {
+		for (int my = 0; my < maze.maze_pixel_height; my += 2)
+			for (int mx = 0; mx < maze.maze_pixel_width; mx += 2) {
 				if (maze.maze_img.getRGB(mx, my) == mazepathcolor) {
 					if (rnd.nextInt(0xff) < coinprobability) {
 						placeCoin(coins, mx, my);
@@ -612,7 +621,7 @@ public class Mazerush extends JFrame {
 		Graphics highscore_graphics = null;
 		Maze hsmaze = new Maze();
 		try {
-			URL url = new URL("file:resources/highscore2.png");
+			URL url = new URL("file:resources/highscore3.png");
 			hsmaze.maze_img = ImageIO.read(url);
 		} catch (IOException e) {
 			System.out.println(e);
@@ -1442,7 +1451,7 @@ public class Mazerush extends JFrame {
 
 	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
-		Font splashFont = new Font("SansSerif", Font.BOLD, 20);
+		Font splashFont = new Font(Font.MONOSPACED, Font.PLAIN, 20);
 		graphics.setFont(splashFont);
 		graphics.setColor(Color.white);
 		BufferedImage mazeimage = null;
@@ -1454,8 +1463,9 @@ public class Mazerush extends JFrame {
 			} catch (IOException e) {
 				System.out.println(e);
 			}
-
-			graphics.drawString(mazelist.get(topmaze).toString(), thumbnailwidth * thumbnailzoom + player.player_width,
+			String mazename = mazelist.get(topmaze).toString();
+			mazename = mazename.replaceAll(".png", "");
+			graphics.drawString(mazename, thumbnailwidth * thumbnailzoom + player.player_width,
 					y + mazeimage.getHeight() / 2);
 			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), 0, y,
 					thumbnailwidth * thumbnailzoom, thumbnailheight * thumbnailzoom, null);
