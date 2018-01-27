@@ -60,7 +60,7 @@ public class Mazerush extends JFrame {
 			maze_subimage_width = FRAME_WIDTH / maze_zoom, maze_subimage_height = FRAME_HEIGHT / maze_zoom,
 			KernalSleepTime = 10, pup = 0b0001, pdown = 0b0010, pleft = 0b0100, pright = 0b1000, pstill = 0,
 			AnimationSpeed = 10, // was 10,Higher number = slower
-			MaxAnimationFrames = 4 * AnimationSpeed;
+			MaxanimationFrames = 4 * AnimationSpeed;
 	static String goalsplash = "Object: finish the maze as fast as possible",
 			keyssplash = "WASD or arrow keys to move\nEnter to skip forward\nBackspace to skip back",
 			creditssplash = "Credits", anykeysplash = "Press any key to continue";
@@ -119,7 +119,7 @@ public class Mazerush extends JFrame {
 		int player_height = 0;
 		int player_center_w = 0;
 		int player_center_h = 0;
-		int AnimationFrame = -1;
+		int animationFrame = -1;
 		boolean maze_completed = false;
 		long completedtime = 0;
 		String rle = null;
@@ -131,22 +131,31 @@ public class Mazerush extends JFrame {
 		int coinsCollected = 0;
 		int coinCollisions = 0;
 	}
-
+	class AnimatedSprite {
+		BufferedImage spritesheet;
+		int x,y;
+		int width = 0;
+		int height = 0;
+		int center_w = 0;
+		int center_h = 0;
+		int animationFrame = -1;
+		int numFrames = 1;
+	}
 	class Coin {
-		BufferedImage Spritesheet;
+		BufferedImage spritesheet;
 
 		{
 			try {
-				Spritesheet = ImageIO.read(new URL("file:playersprites/coin.png"));
+				spritesheet = ImageIO.read(new URL("file:playersprites/coin.png"));
 			} catch (IOException e) {
 				System.out.println(e);
 			}
 		}
 
-		int x = -1, y = -1, center_w = Spritesheet.getWidth(null) / spritesheeth,
-				center_h = Spritesheet.getHeight(null) / spritesheetv, width = center_w * 2, height = center_h * 2,
+		int x = -1, y = -1, center_w = spritesheet.getWidth(null) / spritesheeth,
+				center_h = spritesheet.getHeight(null) / spritesheetv, width = center_w * 2, height = center_h * 2,
 
-		AnimationFrame = -1;
+		animationFrame = -1;
 		boolean collected = false;
 
 	}
@@ -235,7 +244,17 @@ public class Mazerush extends JFrame {
 		} catch (IOException e) {
 			System.out.println(e);
 		}
-
+			AnimatedSprite bouncylock = new AnimatedSprite();
+			bouncylock.numFrames = 8;
+			try{
+				URL lockURL = new URL("file:playersprites/BouncyLock.png");
+				bouncylock.spritesheet = ImageIO.read(lockURL);
+				
+			}
+			catch (IOException e){
+				System.out.println(e);
+			}
+		
 		Maze maze = new Maze();
 		// TODO boolean fanfareplaying = false;
 		int lasthighscoreidx = -1;
@@ -246,7 +265,7 @@ public class Mazerush extends JFrame {
 		// GAME KERNAL
 		while (current_maze > 0) {
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx,
-					scoreArrays);
+					scoreArrays, bouncylock);
 			if (current_maze > 0) {
 				doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d, coins);
 			} else if (current_maze < 0) {
@@ -277,7 +296,7 @@ public class Mazerush extends JFrame {
 		player.player_y = maze_zoom;
 		player.player_moving_direction = 0;
 		player.player_dx = player.player_dy = maze_zoom / player_speed;
-		player.AnimationFrame = 0;
+		player.animationFrame = 0;
 		player.maze_completed = false;
 		maze.maze_x = 0; // all mazes start at 0,0
 		maze.maze_y = 0; // could change so that we look for the mazeorigincolor
@@ -352,7 +371,7 @@ public class Mazerush extends JFrame {
 					}
 				}
 				FrameValid = false;
-				if ((player.AnimationFrame % (AnimationSpeed * 2)) == 0 && player.moving) {
+				if ((player.animationFrame % (AnimationSpeed * 2)) == 0 && player.moving) {
 					try {
 						sampleplayback(footsteps);
 					} catch (IOException e1) {
@@ -571,7 +590,7 @@ public class Mazerush extends JFrame {
 		coin.x = x;
 		coin.y = y;
 		coin.collected = false;
-		coin.AnimationFrame = 0;
+		coin.animationFrame = 0;
 		coins.add(coin);
 		coin.width = 32;
 		coin.height = 32; //this is for double size
@@ -781,7 +800,7 @@ public class Mazerush extends JFrame {
 	}
 
 	public void draw_player(Graphics backbuffer, Maze maze, Player player) {
-		BufferedImage player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16,
+		BufferedImage player_img = player.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
 				player.player_facing_direction * 16, player.player_width / 2, player.player_height / 2);
 		backbuffer.drawImage(player_img, player.player_x - player.player_center_w,
 				player.player_y - player.player_center_h, player.player_width, player.player_height, null);
@@ -790,11 +809,11 @@ public class Mazerush extends JFrame {
 
 	public void draw_coins(Graphics backbuffer, List coins, Maze maze) {
 		Coin coin = (Coin) coins.get(0);
-		BufferedImage coin_img = coin.Spritesheet.getSubimage(coin.AnimationFrame / AnimationSpeed * 16, 0,
+		BufferedImage coin_img = coin.spritesheet.getSubimage(coin.animationFrame / AnimationSpeed * 16, 0,
 				coin.width / 2, coin.height / 2);
-		coin.AnimationFrame++;
-		if (coin.AnimationFrame >= MaxAnimationFrames)
-			coin.AnimationFrame = 0;
+		coin.animationFrame++;
+		if (coin.animationFrame >= MaxanimationFrames)
+			coin.animationFrame = 0;
 		coins.set(0, coin);
 		
 		for (int thiscoin = 0; thiscoin < coins.size(); thiscoin++) {
@@ -1131,9 +1150,9 @@ public class Mazerush extends JFrame {
 			if ((player.player_moving_direction & pright) > 0)
 				player.player_facing_direction = 0;
 
-			player.AnimationFrame++;
-			if (player.AnimationFrame >= MaxAnimationFrames)
-				player.AnimationFrame = 0;
+			player.animationFrame++;
+			if (player.animationFrame >= MaxanimationFrames)
+				player.animationFrame = 0;
 
 		} else {
 			player.player_moving_direction = pstill;
@@ -1386,7 +1405,7 @@ public class Mazerush extends JFrame {
 	}
 
 	public static void mazeSelectSpriteSelector(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
-			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
+			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock) {
 		player.player_moving_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
 		player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
@@ -1425,13 +1444,37 @@ public class Mazerush extends JFrame {
 
 		int y = 325, sheetnum = 0;
 		for (int x = 480; x < 640; x += 40) {
-			player_img = spritesheet[sheetnum++].getSubimage(player.AnimationFrame / AnimationSpeed * 16,
+			player_img = spritesheet[sheetnum++].getSubimage(player.animationFrame / AnimationSpeed * 16,
 					player.player_facing_direction * 16, player.spritesheet_player_width,
 					player.spritesheet_player_height);
 			graphics.drawImage(player_img, x, y, player.player_width, player.player_height, null);
+				bouncylock.x = x;
+				bouncylock.y = y;
+				drawAnimatedSprite(bouncylock, graphics);
+				bouncylock.animationFrame ++;
 		}
 	}
+	public static void drawBouncyLock(int x, int y, Graphics graphics){
+		BufferedImage lockImg = null;
+		try{
+			URL lockURL = new URL("file:playersprites/BouncyLock.png");
+			lockImg = ImageIO.read(lockURL);
+		}
+		catch (IOException e){
+			System.out.println(e);
+		}
+		graphics.drawImage(lockImg.getSubimage(1 / AnimationSpeed * 16,
+				0, 16,
+				16), x, y, 32, 32, null);
 
+	}
+	public static void drawAnimatedSprite(AnimatedSprite sprite, Graphics graphics){
+		int frame = (sprite.animationFrame / AnimationSpeed) % sprite.numFrames;
+		int subx = 16*(frame % 4);
+		int suby = 16*(frame / 4);
+		graphics.drawImage(sprite.spritesheet.getSubimage(subx, suby, 16, 16), sprite.x, sprite.y, 32, 32, null);
+
+	}
 	public static void mazeSelectPlayersprite(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
 		player.player_moving_direction = pleft;
@@ -1440,11 +1483,11 @@ public class Mazerush extends JFrame {
 		player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
 		BufferedImage player_img = null;
 
-		player_img = player.spritesheet.getSubimage(player.AnimationFrame / AnimationSpeed * 16,
+		player_img = player.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
 				player.player_facing_direction * 16, player.spritesheet_player_width, player.spritesheet_player_height);
-		player.AnimationFrame++;
-		if (player.AnimationFrame >= MaxAnimationFrames)
-			player.AnimationFrame = 0;
+		player.animationFrame++;
+		if (player.animationFrame >= MaxanimationFrames)
+			player.animationFrame = 0;
 		graphics.drawImage(player_img, player.player_x, player.player_y, player.player_width, player.player_height,
 				null);
 	}
@@ -1475,7 +1518,7 @@ public class Mazerush extends JFrame {
 	}
 
 	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount,
-			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays) {
+			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock) {
 		int lastmaze = listlocation; // storing last maze so we can use for
 										// highscore highlight
 		int thumbnailheight = FRAME_HEIGHT / maze_zoom;
@@ -1484,7 +1527,7 @@ public class Mazerush extends JFrame {
 		int thumbnailzoom = 8;
 		int cursory = 0;
 		keyboard.poll();
-		player.AnimationFrame = 0;
+		player.animationFrame = 0;
 		player.player_moving_direction = 0;
 		player.player_x = 0;
 		player.player_y = 0;
@@ -1513,7 +1556,7 @@ public class Mazerush extends JFrame {
 				mazeSelectPlayersprite(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
 						thumbnailheight, thumbnailwidth);
 				mazeSelectSpriteSelector(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
-						thumbnailheight, thumbnailwidth);
+						thumbnailheight, thumbnailwidth, bouncylock);
 				if ((listlocation + cursory) == lastmaze)
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3 / 5, 0, lasthighscoreidx);
 				else
