@@ -26,6 +26,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.metadata.IIOInvalidTreeException;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataFormatImpl;
+import javax.imageio.metadata.IIOMetadataNode;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.DataLine;
@@ -42,6 +48,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.w3c.dom.NodeList;
 
 public class Mazerush extends JFrame {
 	static final long serialVersionUID = 1L;
@@ -1403,7 +1410,76 @@ public class Mazerush extends JFrame {
 		System.out.println(mazelist);
 		return (mazelist);
 	}
+	
+    //was:public void readPNGchunk(final String[] args) throws IOException {
+       public static void readPNGchunk(File fileIn, String keyword) throws IOException {
+        	        
+	        
+	/*        try (ImageInputStream input = ImageIO.createImageInputStream(in);
+	             ImageOutputStream output = ImageIO.createImageOutputStream(out)) {
 
+	            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+	            ImageReader reader = readers.next(); // TODO: Validate that there are readers
+
+	            reader.setInput(input);
+	            IIOImage image = reader.readAll(0, null);
+
+	            addTextEntry(image.getMetadata(), "foo", "bar");
+
+	            ImageWriter writer = ImageIO.getImageWriter(reader); // TODO: Validate that there are writers
+	            writer.setOutput(output);
+	            writer.write(image);
+	        }
+*/
+	        try (ImageInputStream input = ImageIO.createImageInputStream(fileIn)) {
+	            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+	            ImageReader reader = readers.next(); // TODO: Validate that there are readers
+
+	            reader.setInput(input);
+	            String value = getTextEntry(reader.getImageMetadata(0), keyword);
+
+	            System.out.println("value: " + value);
+	        }
+	    }
+
+	    private String createOutputName(final File file) {
+	        String name = file.getName();
+	        int dotIndex = name.lastIndexOf('.');
+
+	        String baseName = name.substring(0, dotIndex);
+	        String extension = name.substring(dotIndex);
+
+	        return baseName + "_copy" + extension;
+	    }
+
+	    public void addTextEntry(final IIOMetadata metadata, final String key, final String value) throws IIOInvalidTreeException {
+	        IIOMetadataNode textEntry = new IIOMetadataNode("TextEntry");
+	        textEntry.setAttribute("keyword", key);
+	        textEntry.setAttribute("value", value);
+
+	        IIOMetadataNode text = new IIOMetadataNode("Text");
+	        text.appendChild(textEntry);
+
+	        IIOMetadataNode root = new IIOMetadataNode(IIOMetadataFormatImpl.standardMetadataFormatName);
+	        root.appendChild(text);
+
+	        metadata.mergeTree(IIOMetadataFormatImpl.standardMetadataFormatName, root);
+	    }
+
+	    private static String getTextEntry(final IIOMetadata metadata, final String key) {
+	        IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
+	        NodeList entries = root.getElementsByTagName("TextEntry");
+
+	        for (int i = 0; i < entries.getLength(); i++) {
+	            IIOMetadataNode node = (IIOMetadataNode) entries.item(i);
+	            if (node.getAttribute("keyword").equals(key)) {
+	                return node.getAttribute("value");
+	            }
+	        }
+
+	        return null;
+	    }
+	
 	public static void mazeSelectSpriteSelector(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock) {
 		player.player_moving_direction = pleft;
@@ -1519,6 +1595,16 @@ public class Mazerush extends JFrame {
 
 	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount,
 			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock) {
+		
+		//testcode        public void readPNGchunk(File fileIn, String keyword) throws IOException {
+		try {
+		File file = new File("playersprites/robot.png");
+
+		readPNGchunk(file, "Comment");
+		}
+		catch (IOException e) {
+			System.out.println(e);
+		}
 		int lastmaze = listlocation; // storing last maze so we can use for
 										// highscore highlight
 		int thumbnailheight = FRAME_HEIGHT / maze_zoom;
