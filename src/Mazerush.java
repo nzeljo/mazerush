@@ -25,6 +25,7 @@ import java.util.Timer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.metadata.IIOInvalidTreeException;
@@ -49,6 +50,12 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.w3c.dom.NodeList;
+
+import de.quippy.javamod.mixer.Mixer;
+import de.quippy.javamod.multimedia.MultimediaContainer;
+import de.quippy.javamod.multimedia.MultimediaContainerManager;
+import de.quippy.javamod.multimedia.mod.ModContainer;
+import de.quippy.javamod.system.Helpers;
 
 public class Mazerush extends JFrame {
 	static final long serialVersionUID = 1L;
@@ -274,7 +281,10 @@ public class Mazerush extends JFrame {
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx,
 					scoreArrays, bouncylock);
 			if (current_maze > 0) {
+				Mixer mixer = getmixer("/home/gianni/workspace/mazerush/resources/Waiting for loaders.mod");
+				playsong(mixer);
 				doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d, coins);
+				mixer.stopPlayback();
 			} else if (current_maze < 0) {
 				// ------------------------------------POW TEST CODE
 				// ----------------
@@ -1935,8 +1945,7 @@ public class Mazerush extends JFrame {
 		BufferedImage splashtext_buffer = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics g2d = splashtext_buffer.getGraphics();
 		splashtext(g2d, 0);
-		System.out.print("'splashtext':");
-		System.out.println(splashtext_buffer.getColorModel());
+		
 
 		// BufferStrategy backBuffer = canvas.getBufferStrategy();
 		// Graphics backGraphics = backBuffer.getDrawGraphics();
@@ -1946,9 +1955,8 @@ public class Mazerush extends JFrame {
 		backGraphics.drawImage(titleimage, FRAME_WIDTH / 2 - titleimage.getWidth() / 2, FRAME_HEIGHT / 4, null);
 
 		Graphics frontGraphics = frontBuffer.getDrawGraphics();
-		System.out.print("'backBuffer':");
-		System.out.println(backBuffer.getColorModel());
-
+		Mixer mixer = getmixer("/home/gianni/workspace/mazerush/resources/sommargalaxen_short.mod");
+		playsong(mixer);
 		boolean framevalid = false;
 		while (!keyboard.poll()) {
 			// _update
@@ -1971,8 +1979,52 @@ public class Mazerush extends JFrame {
 		frontGraphics.dispose();
 		while (keyboard.poll()) {
 		} // wait for key to be released
+		mixer.stopPlayback();
 	}
+	public static Mixer getmixer(String fname){
+		Mixer mixer = null;
+				try {
+			        Helpers.registerAllClasses();
+			        File music = new File(fname);
+			        Properties props = new Properties();
+			        props.setProperty(ModContainer.PROPERTY_PLAYER_ISP, "3");
+			        props.setProperty(ModContainer.PROPERTY_PLAYER_STEREO, "2");
+		//	        props.setProperty(ModContainer.PROPERTY_PLAYER_WIDESTEREOMIX, "FALSE");
+			//        props.setProperty(ModContainer.PROPERTY_PLAYER_NOISEREDUCTION, "FALSE");
+			  //      props.setProperty(ModContainer.PROPERTY_PLAYER_NOLOOPS, "FALSE");
+			        props.setProperty(ModContainer.PROPERTY_PLAYER_MEGABASS, "TRUE");
+			        props.setProperty(ModContainer.PROPERTY_PLAYER_BITSPERSAMPLE, "16");
+			        props.setProperty(ModContainer.PROPERTY_PLAYER_FREQUENCY, "48000");
+			        MultimediaContainerManager.configureContainer(props);
+			        URL modUrl = music.toURI().toURL();
+			        MultimediaContainer multimediaContainer = MultimediaContainerManager.getMultimediaContainer(modUrl);
+			        mixer = multimediaContainer.createNewMixer();
+			    } catch (ClassNotFoundException e) {
+			        e.printStackTrace();
+			        System.exit(3);
+				} catch (Exception e) {
 
+					System.out.println("public static void sampleplayback(final File fileName)");
+					System.out.println(e);
+				}
+				return(mixer);
+			}
+	public static void playsong(final Mixer mixer){
+		new Thread(new Runnable() {
+
+			public void run() {
+
+				try {
+			        mixer.startPlayback();
+				} catch (Exception e) {
+
+					System.out.println("public static void sampleplayback(final File fileName)");
+					System.out.println(e);
+				}
+			}
+		}).start();
+	}
+	
 	public static void main(String[] args) {
 		Mazerush app = new Mazerush();
 		app.setTitle("Maze Rush!");
