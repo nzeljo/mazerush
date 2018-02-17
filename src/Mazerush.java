@@ -59,15 +59,11 @@ import de.quippy.javamod.system.Helpers;
 
 public class Mazerush extends JFrame {
 	static final long serialVersionUID = 1L;
-	static final int FRAME_WIDTH = 640, FRAME_HEIGHT = 480, maze_zoom = 40, player_speed = 8, // 1=maze_zoom
-																								// pixels
-																								// per
-																								// frame
-																								// ;
-																								// 8=maze_zoom/8
-																								// pixels
-																								// per
-																								// frame
+	static final int FRAME_WIDTH = 640, 
+			FRAME_HEIGHT = 480, 
+			maze_zoom = 40, 
+			player_speed = 8, // actual movement = mazezoom / player_speed
+																								
 			objectupdate_bandwidth = 14, // Was 14, //time in milliseconds
 											// between object updates
 			mazeselect_bandwidth = 200, coinprobability = 100, // was 10
@@ -281,7 +277,7 @@ public class Mazerush extends JFrame {
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx,
 					scoreArrays, bouncylock);
 			if (current_maze > 0) {
-				Mixer mixer = getmixer("/home/gianni/workspace/mazerush/resources/Waiting for loaders.mod");
+				Mixer mixer = getmixer("resources/Waiting for loaders.mod");
 				playsong(mixer);
 				doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d, coins);
 				mixer.stopPlayback();
@@ -1478,10 +1474,13 @@ public class Mazerush extends JFrame {
 
 	    private static String getTextEntry(final IIOMetadata metadata, final String key) {
 	        IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
-	        NodeList entries = root.getElementsByTagName("TextEntry");
+	 //       NodeList entries = root;
+	        NodeList entries = root.getElementsByTagName("*");
+//	        NodeList entries = root.getElementsByTagName("TextEntry");
 
 	        for (int i = 0; i < entries.getLength(); i++) {
 	            IIOMetadataNode node = (IIOMetadataNode) entries.item(i);
+	            System.out.println("PNGvalue="+node.getAttribute("value"));
 	            if (node.getAttribute("keyword").equals(key)) {
 	                return node.getAttribute("value");
 	            }
@@ -1489,7 +1488,7 @@ public class Mazerush extends JFrame {
 
 	        return null;
 	    }
-	
+	//title=zombie.png,coins=215,music=zombie.mod,acceleration=8,bounce=0,deceleration=8,maxspeed=8
 	public static void mazeSelectSpriteSelector(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock) {
 		player.player_moving_direction = pleft;
@@ -1608,9 +1607,10 @@ public class Mazerush extends JFrame {
 		
 		//testcode        public void readPNGchunk(File fileIn, String keyword) throws IOException {
 		try {
-		File file = new File("playersprites/robot.png");
+		File file = new File("playersprites/ghost.png");
 
-		readPNGchunk(file, "Comment");
+		readPNGchunk(file, "Description");
+	//	readPNGchunk(file, "Comment");
 		}
 		catch (IOException e) {
 			System.out.println(e);
@@ -1955,7 +1955,7 @@ public class Mazerush extends JFrame {
 		backGraphics.drawImage(titleimage, FRAME_WIDTH / 2 - titleimage.getWidth() / 2, FRAME_HEIGHT / 4, null);
 
 		Graphics frontGraphics = frontBuffer.getDrawGraphics();
-		Mixer mixer = getmixer("/home/gianni/workspace/mazerush/resources/sommargalaxen_short.mod");
+		Mixer mixer = getmixer("resources/sommargalaxen_short.mod");
 		playsong(mixer);
 		boolean framevalid = false;
 		while (!keyboard.poll()) {
