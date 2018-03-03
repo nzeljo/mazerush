@@ -63,9 +63,9 @@ public class Mazerush extends JFrame {
 			FRAME_HEIGHT = 480, 
 			maze_zoom = 40, 
 			player_speed = 8, // actual movement = mazezoom / player_speed
-																								
+
 			objectupdate_bandwidth = 14, // Was 14, //time in milliseconds
-											// between object updates
+			// between object updates
 			mazeselect_bandwidth = 200, coinprobability = 100, // was 10
 			maze_subimage_width = FRAME_WIDTH / maze_zoom, maze_subimage_height = FRAME_HEIGHT / maze_zoom,
 			KernalSleepTime = 10, pup = 0b0001, pdown = 0b0010, pleft = 0b0100, pright = 0b1000, pstill = 0,
@@ -75,19 +75,19 @@ public class Mazerush extends JFrame {
 			keyssplash = "WASD or arrow keys to move\nEnter to skip forward\nBackspace to skip back",
 			creditssplash = "Credits", anykeysplash = "Press any key to continue";
 	static final int widthtenth = FRAME_WIDTH / 10, heighttenth = FRAME_HEIGHT / 10, spritesheeth = 4, // how
-																										// many
-																										// sprite
-																										// frames
-																										// in
-																										// spritesheet
-																										// horizontally
+			// many
+			// sprite
+			// frames
+			// in
+			// spritesheet
+			// horizontally
 			spritesheetv = 5, // how many sprite frames in spritesheet
-								// vertically
+			// vertically
 			mazepathcolor = 0xff000000, mazeorigincolor = 0xff00ff00, mazegoalcolor = 0xffff0000;
 
 	String hs_chars[] = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S",
 			"T", "U", "V", "W", "X", "Y", "Z", "-", "!", ".", "\u2408", "\u21B5", "?", "Highscore!",
-			"Enter your initials" };
+	"Enter your initials" };
 	int hs_chars_xy[][] = { { 3, 1 }, { 5, 1 }, { 7, 1 }, { 9, 1 }, { 11, 1 }, { 13, 3 }, { 13, 5 }, { 13, 7 },
 			{ 13, 9 }, { 13, 11 }, { 11, 13 }, { 9, 13 }, { 7, 13 }, { 5, 13 }, { 3, 13 }, { 1, 11 }, { 1, 9 },
 			{ 1, 7 }, { 1, 5 }, { 1, 3 }, { 5, 4 }, { 7, 4 }, { 9, 4 }, { 5, 10 }, { 7, 10 }, { 9, 10 }, { 10, 5 },
@@ -117,11 +117,11 @@ public class Mazerush extends JFrame {
 	class Player {
 		BufferedImage spritesheet;
 		int player_x = maze_zoom, // FRAME_WIDTH/2 + 10, //this is ugly and not
-									// maintainable
+				// maintainable
 				player_dx = maze_zoom / player_speed, // this means player moves
-														// maze_zoom /
-														// player_speed pixels
-														// each frame
+				// maze_zoom /
+				// player_speed pixels
+				// each frame
 				player_y = maze_zoom, // FRAME_HEIGHT/2,
 				player_dy = player_dx, player_moving_direction = 0, player_facing_direction = 0;
 		boolean moving = false;
@@ -165,7 +165,7 @@ public class Mazerush extends JFrame {
 		int x = -1, y = -1, center_w = spritesheet.getWidth(null) / spritesheeth,
 				center_h = spritesheet.getHeight(null) / spritesheetv, width = center_w * 2, height = center_h * 2,
 
-		animationFrame = -1;
+				animationFrame = -1;
 		boolean collected = false;
 
 	}
@@ -238,12 +238,12 @@ public class Mazerush extends JFrame {
 		g2d.setColor(background);
 		// .....
 		startFrameTimers();
-		splashscreen(buffer);
+		splashScreen(buffer);
 		player.spritesheet = null;
 		player.spritesheet_player_width = 0;
 		player.spritesheet_player_height = 0;
 		try {
-			URL player_url = new URL("file:playersprites/ghost.png");
+			URL player_url = new URL("file:playersprites/zombie.png");
 			player.spritesheet = ImageIO.read(player_url);
 			player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 			player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
@@ -254,17 +254,17 @@ public class Mazerush extends JFrame {
 		} catch (IOException e) {
 			System.out.println(e);
 		}
-			AnimatedSprite bouncylock = new AnimatedSprite();
-			bouncylock.numFrames = 8;
-			try{
-				URL lockURL = new URL("file:playersprites/BouncyLock.png");
-				bouncylock.spritesheet = ImageIO.read(lockURL);
-				
-			}
-			catch (IOException e){
-				System.out.println(e);
-			}
-		
+		AnimatedSprite bouncylock = new AnimatedSprite();
+		bouncylock.numFrames = 8;
+		try{
+			URL lockURL = new URL("file:playersprites/BouncyLock.png");
+			bouncylock.spritesheet = ImageIO.read(lockURL);
+
+		}
+		catch (IOException e){
+			System.out.println(e);
+		}
+
 		Maze maze = new Maze();
 		// TODO boolean fanfareplaying = false;
 		int lasthighscoreidx = -1;
@@ -360,14 +360,14 @@ public class Mazerush extends JFrame {
 		File coin_collected_sound = new File("resources/135936__bradwesson__collectcoin.wav");
 		player.coinsCollected = 0;
 		player.coinCollisions = 0;
-		
+
 		while (current_maze > 0) {
 			// inner kernel loop starts here
 
 			while (objectupdatetick > 0) {
 				objectupdatetick--;
 				player = update_objects(maze, player);
-				
+
 				player.coinCollisions = coinCollision(player, coins, maze);
 				player.coinsCollected += player.coinCollisions;
 				if (player.coinCollisions > 0) {
@@ -417,28 +417,10 @@ public class Mazerush extends JFrame {
 					e1.printStackTrace();
 				}
 			}
-			if (player.maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { // <-
-																													// This
-																													// line
-																													// requires
-																													// you
-																													// to
-																													// go
-																													// on
-																													// red
-																													// and
-																													// then
-																													// go
-																													// off
-																													// of
-																													// it
-																													// again
+			if (player.maze_completed && (System.currentTimeMillis() > completed_delay) && completed_delay > 0) { 
 				completed_delay = 0;
-
 				try {
-
-					Thread.sleep(2000); // transitional pause
-
+					Thread.sleep(2000); // transitional pause between maze run screen and highscore screen
 				} catch (InterruptedException e) {
 					System.out.println(e);
 
@@ -454,13 +436,6 @@ public class Mazerush extends JFrame {
 						lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
 					}
 				}
-				/*
-				 * try { FileWriter file = new FileWriter("pow.txt");
-				 * file.write(player.rle); file.flush(); file.close();
-				 * 
-				 * } catch (IOException e2) { e2.printStackTrace(); }
-				 */
-
 				player.maze_completed = false;
 				break; // break out of while loop for inner game kernal
 			}
@@ -477,7 +452,9 @@ public class Mazerush extends JFrame {
 			// ------------------------------------------------------------------------------------------------
 			// UPDATE GRAPHICS
 			// ------------------------------------------------------------------------------------------------
-			if (objectupdatetick == 0 && FrameValid == false) {
+//	was		if (objectupdatetick == 0 && FrameValid == false) {
+			if (!FrameValid) {
+
 				try {
 					totalFrameCount++;
 					backbuffer = buffer.getDrawGraphics(); // DRAW
@@ -497,8 +474,8 @@ public class Mazerush extends JFrame {
 					backbuffer.drawImage(
 							maze.maze_img.getSubimage(-maze.maze_x / maze_zoom, -maze.maze_y / maze_zoom,
 									maze_subimage_width + maze_overscan_x, maze_subimage_height + maze_overscan_y),
-							maze.maze_x % maze_zoom, maze.maze_y % maze_zoom, FRAME_WIDTH + maze_zoom * maze_overscan_x,
-							FRAME_HEIGHT + maze_zoom * maze_overscan_y, null);
+									maze.maze_x % maze_zoom, maze.maze_y % maze_zoom, FRAME_WIDTH + maze_zoom * maze_overscan_x,
+									FRAME_HEIGHT + maze_zoom * maze_overscan_y, null);
 					draw_coins(backbuffer, coins, maze);
 					draw_player(backbuffer, maze, player);
 					backbuffer.setFont(timeFont);
@@ -508,7 +485,7 @@ public class Mazerush extends JFrame {
 					backbuffer.drawString(
 							String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000),
 							10, 40); // TODO move to other side of screen if
-										// player is on top of it
+					// player is on top of it
 					backbuffer.drawString(String.format("FPS: %d", currentFPS), 10, 80);
 					backbuffer.setColor(Color.red);
 					backbuffer.drawString(String.format("Coins: %d", player.coinsCollected), 10, 120);
@@ -588,10 +565,6 @@ public class Mazerush extends JFrame {
 				if (maze.maze_img.getRGB(mx, my) == mazepathcolor) {
 					if (rnd.nextInt(0xff) < coinprobability) {
 						placeCoin(coins, mx, my);
-						System.out.print("Coin X:");
-						System.out.print(mx);
-						System.out.print(" Coin Y:");
-						System.out.println(my);
 					}
 				}
 			}
@@ -690,8 +663,8 @@ public class Mazerush extends JFrame {
 		long highscore_delay = System.currentTimeMillis() + 60 * 1000;
 		while (!(highscore_entered == true && System.currentTimeMillis() > highscore_delay)
 				&& !(keyboard.keyDown(KeyEvent.VK_ESCAPE))) { // Highscore
-																// kernal HS
-																// KERNAL
+			// kernal HS
+			// KERNAL
 			try {
 				highscore_graphics = buffer.getDrawGraphics();
 				highscore_graphics.setColor(fillcolor);
@@ -828,7 +801,7 @@ public class Mazerush extends JFrame {
 		if (coin.animationFrame >= MaxanimationFrames)
 			coin.animationFrame = 0;
 		coins.set(0, coin);
-		
+
 		for (int thiscoin = 0; thiscoin < coins.size(); thiscoin++) {
 			coin = (Coin) coins.get(thiscoin);
 			int coinx = maze.maze_x + coin.x * maze_zoom - coin.width / 2 + maze_zoom / 2;
@@ -866,8 +839,8 @@ public class Mazerush extends JFrame {
 						|| (cr >= pxleft && cr <= pxright && cb >= pytop && cb <= pybottom)) {
 					collected++;
 					iter.remove();
-				
-					
+
+
 				}
 
 			}
@@ -883,17 +856,17 @@ public class Mazerush extends JFrame {
 		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) / maze_zoom;
 
 		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only
-																					// bottom
-																					// and
-																					// right
-																					// cause
-																					// outofbounds
-																					// exception
-																					// so
-																					// we
-																					// just
-																					// check
-																					// those
+			// bottom
+			// and
+			// right
+			// cause
+			// outofbounds
+			// exception
+			// so
+			// we
+			// just
+			// check
+			// those
 			return (false);
 
 		if (maze.maze_img.getRGB(pxleft, pytop) == pixelcolor)
@@ -919,17 +892,17 @@ public class Mazerush extends JFrame {
 		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) / maze_zoom;
 
 		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only
-																					// bottom
-																					// and
-																					// right
-																					// cause
-																					// outofbounds
-																					// exception
-																					// so
-																					// we
-																					// just
-																					// check
-																					// those
+			// bottom
+			// and
+			// right
+			// cause
+			// outofbounds
+			// exception
+			// so
+			// we
+			// just
+			// check
+			// those
 			return (false);
 
 		if (maze.maze_img.getRGB(pxleft, pytop) != mazepathcolor
@@ -963,17 +936,17 @@ public class Mazerush extends JFrame {
 		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) / maze_zoom;
 
 		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only
-																					// bottom
-																					// and
-																					// right
-																					// cause
-																					// outofbounds
-																					// exception
-																					// so
-																					// we
-																					// just
-																					// check
-																					// those
+			// bottom
+			// and
+			// right
+			// cause
+			// outofbounds
+			// exception
+			// so
+			// we
+			// just
+			// check
+			// those
 			return (false);
 
 		if (maze.maze_img.getRGB(pxleft, pytop) == 0xffff0000)
@@ -1000,17 +973,17 @@ public class Mazerush extends JFrame {
 		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) / maze_zoom;
 
 		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only
-																					// bottom
-																					// and
-																					// right
-																					// cause
-																					// outofbounds
-																					// exception
-																					// so
-																					// we
-																					// just
-																					// check
-																					// those
+			// bottom
+			// and
+			// right
+			// cause
+			// outofbounds
+			// exception
+			// so
+			// we
+			// just
+			// check
+			// those
 			return (false);
 
 		if (maze.maze_img.getRGB(pxleft, pytop) == 0xff00ff00)
@@ -1110,9 +1083,9 @@ public class Mazerush extends JFrame {
 		}
 		// Check keyboard
 		player.player_moving_direction = 0; /*
-											 * clear before setting bits for
-											 * directions
-											 */
+		 * clear before setting bits for
+		 * directions
+		 */
 		if (keyboard.keyDown(KeyEvent.VK_W) || keyboard.keyDown(KeyEvent.VK_UP) || ((powdir & pup) > 0)) {
 			player.moving = true;
 			player.player_moving_direction |= pup;
@@ -1266,11 +1239,11 @@ public class Mazerush extends JFrame {
 
 		for (int index = 0; index < 10; index++) {
 			scoreArrays.times[index] = (Long) scores.get(index); // (Long) type
-																	// conversion
-																	// between
-																	// JSON and
-																	// java
-																	// objects
+			// conversion
+			// between
+			// JSON and
+			// java
+			// objects
 			scoreArrays.initials[index] = (String) initials.get(index);
 			scoreArrays.pows[index] = (String) pows.get(index);
 
@@ -1416,78 +1389,61 @@ public class Mazerush extends JFrame {
 		System.out.println(mazelist);
 		return (mazelist);
 	}
-	
-    //was:public void readPNGchunk(final String[] args) throws IOException {
-       public static void readPNGchunk(File fileIn, String keyword) throws IOException {
-        	        
-	        
-	/*        try (ImageInputStream input = ImageIO.createImageInputStream(in);
-	             ImageOutputStream output = ImageIO.createImageOutputStream(out)) {
 
-	            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-	            ImageReader reader = readers.next(); // TODO: Validate that there are readers
+	//was:public void readPNGchunk(final String[] args) throws IOException {
+	public static String readPNGchunk(File fileIn, String keyword) throws IOException {
+		try (ImageInputStream input = ImageIO.createImageInputStream(fileIn)) {
+			Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+			ImageReader reader = readers.next(); // TODO: Validate that there are readers
 
-	            reader.setInput(input);
-	            IIOImage image = reader.readAll(0, null);
+			reader.setInput(input);
+			String value = getTextEntry(reader.getImageMetadata(0), keyword);
 
-	            addTextEntry(image.getMetadata(), "foo", "bar");
+			return(value);
+		}
+		//return(null);
+	}
 
-	            ImageWriter writer = ImageIO.getImageWriter(reader); // TODO: Validate that there are writers
-	            writer.setOutput(output);
-	            writer.write(image);
-	        }
-*/
-	        try (ImageInputStream input = ImageIO.createImageInputStream(fileIn)) {
-	            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-	            ImageReader reader = readers.next(); // TODO: Validate that there are readers
+	private String createOutputName(final File file) {
+		String name = file.getName();
+		int dotIndex = name.lastIndexOf('.');
 
-	            reader.setInput(input);
-	            String value = getTextEntry(reader.getImageMetadata(0), keyword);
+		String baseName = name.substring(0, dotIndex);
+		String extension = name.substring(dotIndex);
 
-	            System.out.println("value: " + value);
-	        }
-	    }
+		return baseName + "_copy" + extension;
+	}
 
-	    private String createOutputName(final File file) {
-	        String name = file.getName();
-	        int dotIndex = name.lastIndexOf('.');
+	public void addTextEntry(final IIOMetadata metadata, final String key, final String value) throws IIOInvalidTreeException {
+		IIOMetadataNode textEntry = new IIOMetadataNode("TextEntry");
+		textEntry.setAttribute("keyword", key);
+		textEntry.setAttribute("value", value);
 
-	        String baseName = name.substring(0, dotIndex);
-	        String extension = name.substring(dotIndex);
+		IIOMetadataNode text = new IIOMetadataNode("Text");
+		text.appendChild(textEntry);
 
-	        return baseName + "_copy" + extension;
-	    }
+		IIOMetadataNode root = new IIOMetadataNode(IIOMetadataFormatImpl.standardMetadataFormatName);
+		root.appendChild(text);
 
-	    public void addTextEntry(final IIOMetadata metadata, final String key, final String value) throws IIOInvalidTreeException {
-	        IIOMetadataNode textEntry = new IIOMetadataNode("TextEntry");
-	        textEntry.setAttribute("keyword", key);
-	        textEntry.setAttribute("value", value);
+		metadata.mergeTree(IIOMetadataFormatImpl.standardMetadataFormatName, root);
+	}
 
-	        IIOMetadataNode text = new IIOMetadataNode("Text");
-	        text.appendChild(textEntry);
+	private static String getTextEntry(final IIOMetadata metadata, final String key) {
+		IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
+		//       NodeList entries = root;
+		
+		NodeList entries = root.getElementsByTagName("TextEntry");
 
-	        IIOMetadataNode root = new IIOMetadataNode(IIOMetadataFormatImpl.standardMetadataFormatName);
-	        root.appendChild(text);
+		for (int i = 0; i < entries.getLength(); i++) {
+			IIOMetadataNode node = (IIOMetadataNode) entries.item(i);
+			System.out.println("PNGvalue="+node.getAttribute("value"));
+			if (node.getAttribute("keyword").equals(key)) {
+				return node.getAttribute("value");
+			}
+		}
 
-	        metadata.mergeTree(IIOMetadataFormatImpl.standardMetadataFormatName, root);
-	    }
-
-	    private static String getTextEntry(final IIOMetadata metadata, final String key) {
-	        IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
-	 //       NodeList entries = root;
-	        NodeList entries = root.getElementsByTagName("*");
-//	        NodeList entries = root.getElementsByTagName("TextEntry");
-
-	        for (int i = 0; i < entries.getLength(); i++) {
-	            IIOMetadataNode node = (IIOMetadataNode) entries.item(i);
-	            System.out.println("PNGvalue="+node.getAttribute("value"));
-	            if (node.getAttribute("keyword").equals(key)) {
-	                return node.getAttribute("value");
-	            }
-	        }
-
-	        return null;
-	    }
+		return null;
+	}
 	//title=zombie.png,coins=215,music=zombie.mod,acceleration=8,bounce=0,deceleration=8,maxspeed=8
 	public static void mazeSelectSpriteSelector(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock) {
@@ -1533,10 +1489,10 @@ public class Mazerush extends JFrame {
 					player.player_facing_direction * 16, player.spritesheet_player_width,
 					player.spritesheet_player_height);
 			graphics.drawImage(player_img, x, y, player.player_width, player.player_height, null);
-				bouncylock.x = x;
-				bouncylock.y = y;
-				drawAnimatedSprite(bouncylock, graphics);
-				bouncylock.animationFrame ++;
+			bouncylock.x = x;
+			bouncylock.y = y;
+			drawAnimatedSprite(bouncylock, graphics);
+			bouncylock.animationFrame ++;
 		}
 	}
 	public static void drawBouncyLock(int x, int y, Graphics graphics){
@@ -1579,8 +1535,8 @@ public class Mazerush extends JFrame {
 
 	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
-		Font splashFont = new Font(Font.MONOSPACED, Font.PLAIN, 20);
-		graphics.setFont(splashFont);
+		Font MazeSelectFont = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+		graphics.setFont(MazeSelectFont);
 		graphics.setColor(Color.white);
 		BufferedImage mazeimage = null;
 		int y = 0;
@@ -1604,19 +1560,19 @@ public class Mazerush extends JFrame {
 
 	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount,
 			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock) {
-		
+
 		//testcode        public void readPNGchunk(File fileIn, String keyword) throws IOException {
 		try {
-		File file = new File("playersprites/ghost.png");
+			File file = new File("playersprites/zombie.png");
 
-		readPNGchunk(file, "Description");
-	//	readPNGchunk(file, "Comment");
+			System.out.println("zombie.png Title = " + readPNGchunk(file, "Title"));
+
 		}
 		catch (IOException e) {
 			System.out.println(e);
 		}
 		int lastmaze = listlocation; // storing last maze so we can use for
-										// highscore highlight
+		// highscore highlight
 		int thumbnailheight = FRAME_HEIGHT / maze_zoom;
 		// int thumbnailheight = 16;
 		int thumbnailwidth = FRAME_WIDTH / maze_zoom;
@@ -1825,10 +1781,10 @@ public class Mazerush extends JFrame {
 			public synchronized void update(LineEvent event) {
 				javax.sound.sampled.LineEvent.Type eventType = event.getType();
 				if (eventType == javax.sound.sampled.LineEvent.Type.STOP  ||
-																			 eventType
-																			 ==
-																			 javax.sound.sampled.LineEvent.Type.CLOSE)
-																			 {
+						eventType
+						==
+						javax.sound.sampled.LineEvent.Type.CLOSE)
+				{
 					done = true;
 					notifyAll();
 				}
@@ -1852,14 +1808,14 @@ public class Mazerush extends JFrame {
 					//https://stackoverflow.com/questions/18942424/error-playing-audio-file-from-java-via-pulseaudio-on-ubuntu
 					DataLine.Info info = new DataLine.Info(Clip.class, format);
 					Clip clip = (Clip)AudioSystem.getLine(info);
-					
+
 					//was Clip clip = AudioSystem.getClip();
 					clip.open(ais);
 					clip.addLineListener(listener);
 					clip.start();
 					while(clip.isRunning())
 					{
-					   Thread.yield();
+						Thread.yield();
 					}
 					listener.waitUntilDone();
 					clip.removeLineListener(listener);
@@ -1873,25 +1829,7 @@ public class Mazerush extends JFrame {
 			}
 		}).start();
 	}
-
-	/*
-	 * class AudioListener implements LineListener { private boolean done =
-	 * false;
-	 * 
-	 * @Override public synchronized void update(LineEvent event) {
-	 * javax.sound.sampled.LineEvent.Type eventType = event.getType(); if
-	 * (eventType == javax.sound.sampled.LineEvent.Type.STOP || eventType ==
-	 * javax.sound.sampled.LineEvent.Type.CLOSE) { done = true; notifyAll(); } }
-	 * public synchronized void waitUntilDone() throws InterruptedException {
-	 * while (!done) { wait(); } } }
-	 * 
-	 * AudioListener listener = new AudioListener(); AudioInputStream ais =
-	 * AudioSystem.getAudioInputStream(fileName); try { Clip clip =
-	 * AudioSystem.getClip(); clip.addLineListener(listener); clip.open(ais);
-	 * try { clip.start(); // listener.waitUntilDone(); } finally { //
-	 * clip.close(); } } finally { ais.close(); } }
-	 */
-	final static int splashtextwaveheight = 10, goalsplashx = 0, goalsplashy = 5, creditssplashx = 0,
+	final static int splashTextWaveHeight = 15, goalsplashx = 0, goalsplashy = 5, creditssplashx = 0,
 			creditssplashy = 9, anykeysplashx = 5, anykeysplashy = 9, keyssplashx = 0, keyssplashy = 1;
 
 	public static void splashtext(Graphics splashgraphics, double yoffset) {
@@ -1921,31 +1859,26 @@ public class Mazerush extends JFrame {
 		}
 	}
 
-	public static void splashscreen(BufferStrategy frontBuffer) {
+	public static void splashScreen(BufferStrategy frontBuffer) {
 		double yoffset = 0;
 		double waveangle = 0;
-		double wavespeed = 0.07;
+		double wavespeed = 0.05;
 		BufferedImage splashimage = null;
 		BufferedImage titleimage = null;
 		try {
 			splashimage = ImageIO.read(new File("resources/splash2.png"));
-			System.out.print("'splashimage':");
-			System.out.println(splashimage.getColorModel());
-
 		} catch (IOException e) {
 			System.out.println(e);
 		}
 		try {
 			titleimage = ImageIO.read(new File("resources/gametitle.png"));
-			System.out.print("'titleimage':");
-			System.out.println(titleimage.getColorModel());
 		} catch (IOException e) {
 			System.out.println(e);
 		}
 		BufferedImage splashtext_buffer = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics g2d = splashtext_buffer.getGraphics();
 		splashtext(g2d, 0);
-		
+
 
 		// BufferStrategy backBuffer = canvas.getBufferStrategy();
 		// Graphics backGraphics = backBuffer.getDrawGraphics();
@@ -1954,68 +1887,93 @@ public class Mazerush extends JFrame {
 		backGraphics.drawImage(splashimage, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, null);
 		backGraphics.drawImage(titleimage, FRAME_WIDTH / 2 - titleimage.getWidth() / 2, FRAME_HEIGHT / 4, null);
 
-		Graphics frontGraphics = frontBuffer.getDrawGraphics();
-		Mixer mixer = getmixer("resources/sommargalaxen_short.mod");
-		playsong(mixer);
+		Graphics frontGraphics = null;
+		//Mixer mixer = getmixer("resources/sommargalaxen_short.mod");
+		//playsong(mixer);
 		boolean framevalid = false;
+		objectupdatetick = 0;
 		while (!keyboard.poll()) {
 			// _update
 			while (objectupdatetick > 0) {
+				//System.out.println("update start");
+				
 				objectupdatetick--;
-				yoffset = Math.sin(waveangle) * splashtextwaveheight;
+				yoffset = Math.sin(waveangle) * splashTextWaveHeight;
 				waveangle += wavespeed;
 				framevalid = false;
+				if (objectupdatetick>0)  System.out.println("ticks =" + objectupdatetick);
+				//System.out.println("update end");
+				
 			}
 			// _draw
 			if (!framevalid) {
-				frontGraphics.drawImage(backBuffer, 0, 0, null);
-				frontGraphics.drawImage(splashtext_buffer, 0, (int) yoffset, null);
+				try {
+					//System.out.println("draw start");
+					frontGraphics = frontBuffer.getDrawGraphics();
+					
+					frontGraphics.drawImage(backBuffer, 0, 0, null);
+					frontGraphics.drawImage(splashtext_buffer, 0, (int) yoffset, null);
 
-				if (!frontBuffer.contentsLost())
-					frontBuffer.show();
-				framevalid = true;
+									if (!frontBuffer.contentsLost())
+										frontBuffer.show();
+					
+					framevalid = true;
+					//System.out.println("draw end");
+				}finally {
+					//System.out.println("release start");
+					// Release resources
+					if (frontGraphics != null)
+						frontGraphics.dispose();
+					if (g2d != null)
+						g2d.dispose();
+					//System.out.println("release end");
+				}
 			}
+			//if (objectupdatetick>0)  System.out.println("ticks =" + objectupdatetick);
+
 		}
 		frontGraphics.dispose();
 		while (keyboard.poll()) {
 		} // wait for key to be released
-		mixer.stopPlayback();
+		//mixer.stopPlayback();
 	}
+	
+	
 	public static Mixer getmixer(String fname){
 		Mixer mixer = null;
-				try {
-			        Helpers.registerAllClasses();
-			        File music = new File(fname);
-			        Properties props = new Properties();
-			        props.setProperty(ModContainer.PROPERTY_PLAYER_ISP, "3");
-			        props.setProperty(ModContainer.PROPERTY_PLAYER_STEREO, "2");
-		//	        props.setProperty(ModContainer.PROPERTY_PLAYER_WIDESTEREOMIX, "FALSE");
+		try {
+			Helpers.registerAllClasses();
+			File music = new File(fname);
+			Properties props = new Properties();
+			props.setProperty(ModContainer.PROPERTY_PLAYER_ISP, "3");
+			props.setProperty(ModContainer.PROPERTY_PLAYER_STEREO, "2");
+			//	        props.setProperty(ModContainer.PROPERTY_PLAYER_WIDESTEREOMIX, "FALSE");
 			//        props.setProperty(ModContainer.PROPERTY_PLAYER_NOISEREDUCTION, "FALSE");
-			  //      props.setProperty(ModContainer.PROPERTY_PLAYER_NOLOOPS, "FALSE");
-			        props.setProperty(ModContainer.PROPERTY_PLAYER_MEGABASS, "TRUE");
-			        props.setProperty(ModContainer.PROPERTY_PLAYER_BITSPERSAMPLE, "16");
-			        props.setProperty(ModContainer.PROPERTY_PLAYER_FREQUENCY, "48000");
-			        MultimediaContainerManager.configureContainer(props);
-			        URL modUrl = music.toURI().toURL();
-			        MultimediaContainer multimediaContainer = MultimediaContainerManager.getMultimediaContainer(modUrl);
-			        mixer = multimediaContainer.createNewMixer();
-			    } catch (ClassNotFoundException e) {
-			        e.printStackTrace();
-			        System.exit(3);
-				} catch (Exception e) {
+			//      props.setProperty(ModContainer.PROPERTY_PLAYER_NOLOOPS, "FALSE");
+			props.setProperty(ModContainer.PROPERTY_PLAYER_MEGABASS, "TRUE");
+			props.setProperty(ModContainer.PROPERTY_PLAYER_BITSPERSAMPLE, "16");
+			props.setProperty(ModContainer.PROPERTY_PLAYER_FREQUENCY, "48000");
+			MultimediaContainerManager.configureContainer(props);
+			URL modUrl = music.toURI().toURL();
+			MultimediaContainer multimediaContainer = MultimediaContainerManager.getMultimediaContainer(modUrl);
+			mixer = multimediaContainer.createNewMixer();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			System.exit(3);
+		} catch (Exception e) {
 
-					System.out.println("public static void sampleplayback(final File fileName)");
-					System.out.println(e);
-				}
-				return(mixer);
-			}
+			System.out.println("public static void sampleplayback(final File fileName)");
+			System.out.println(e);
+		}
+		return(mixer);
+	}
 	public static void playsong(final Mixer mixer){
 		new Thread(new Runnable() {
 
 			public void run() {
 
 				try {
-			        mixer.startPlayback();
+					mixer.startPlayback();
 				} catch (Exception e) {
 
 					System.out.println("public static void sampleplayback(final File fileName)");
@@ -2024,8 +1982,9 @@ public class Mazerush extends JFrame {
 			}
 		}).start();
 	}
-	
+
 	public static void main(String[] args) {
+		System.setProperty("sun.java2d.opengl", "true");
 		Mazerush app = new Mazerush();
 		app.setTitle("Maze Rush!");
 		app.setVisible(true);
