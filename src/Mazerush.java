@@ -141,6 +141,11 @@ public class Mazerush extends JFrame {
 		int coinsCollected = 0;
 		int coinCollisions = 0;
 	}
+	class Rusher {
+		BufferedImage spritesheet;
+		int price;
+		String name;
+	}
 	class AnimatedSprite {
 		BufferedImage spritesheet;
 		int x,y;
@@ -213,6 +218,7 @@ public class Mazerush extends JFrame {
 	}
 
 	public void run() {
+		List rusherList = getRushers("playersprites/");
 		Player player = new Player();
 
 		int current_maze = 1;
@@ -275,7 +281,7 @@ public class Mazerush extends JFrame {
 		// GAME KERNAL
 		while (current_maze > 0) {
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx,
-					scoreArrays, bouncylock);
+					scoreArrays, bouncylock, rusherList);
 			if (current_maze > 0) {
 				Mixer mixer = getmixer("resources/Waiting for loaders.mod");
 				playsong(mixer);
@@ -1444,15 +1450,68 @@ public class Mazerush extends JFrame {
 
 		return null;
 	}
+	public static JSONArray findRushers() {
+
+		JSONArray mazelist = new JSONArray();
+		mazelist.add("dummy");
+
+		Path dir = Paths.get("");
+		dir = dir.resolve("mazes");
+
+		// System.out.format("%s%n",dir.toAbsolutePath());
+		try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.png")) {
+			for (Path entry : stream) {
+				String fname = new String(entry.getFileName().toString());
+				mazelist.add(fname);
+				/*
+				 * if(fname.contains("maze")) { mazelist.add(fname); }
+				 */
+			}
+		} catch (IOException x) {
+			System.err.println(x);
+		}
+		System.out.println(mazelist);
+		return (mazelist);
+	}
+	public static List getRushers(String rushersDir){
+		List rushers = new ArrayList();
+		File rusherFile = null;
+		Path dir = Paths.get("");
+		dir = dir.resolve(rushersDir);
+		Rusher tempRusher = null;
+		// System.out.format("%s%n",dir.toAbsolutePath());
+		try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.png")) {
+			for (Path entry : stream) {
+			//	String fname = new String(entry.getFileName().toString());
+				System.out.println(entry.getFileName());
+				rusherFile = new File(entry.getFileName().toString());
+				System.out.println("HEY!");
+				tempRusher.spritesheet = ImageIO.read(rusherFile);
+				System.out.println("yo!");
+				
+				rushers.add(tempRusher);
+				
+				/*
+				 * if(fname.contains("maze")) { mazelist.add(fname); }
+				 */
+			}
+		} catch (IOException x) {
+			System.err.println(x);
+		}
+
+
+		return(rushers);
+	}
 	//title=zombie.png,coins=215,music=zombie.mod,acceleration=8,bounce=0,deceleration=8,maxspeed=8
 	public static void mazeSelectSpriteSelector(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
-			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock) {
+			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock, List rusherList) {
 		player.player_moving_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
 		player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 		player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
-
+	
 		BufferedImage player_img = null;
+		/*
 		BufferedImage spritesheet[] = { null, null, null, null };
 		try {
 			URL player_url = new URL("file:playersprites/zombie.png");
@@ -1482,10 +1541,12 @@ public class Mazerush extends JFrame {
 		} catch (IOException e) {
 			System.out.println(e);
 		}
-
-		int y = 325, sheetnum = 0;
-		for (int x = 480; x < 640; x += 40) {
-			player_img = spritesheet[sheetnum++].getSubimage(player.animationFrame / AnimationSpeed * 16,
+		*/
+		int y = 325;
+		int x = 480;
+		for (int i = 0; i < rusherList.size(); i++) {
+			Rusher rusher = (Rusher) rusherList.get(i);
+			player_img = rusher.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
 					player.player_facing_direction * 16, player.spritesheet_player_width,
 					player.spritesheet_player_height);
 			graphics.drawImage(player_img, x, y, player.player_width, player.player_height, null);
@@ -1493,6 +1554,7 @@ public class Mazerush extends JFrame {
 			bouncylock.y = y;
 			drawAnimatedSprite(bouncylock, graphics);
 			bouncylock.animationFrame ++;
+			x += 40;
 		}
 	}
 	public static void drawBouncyLock(int x, int y, Graphics graphics){
@@ -1559,7 +1621,7 @@ public class Mazerush extends JFrame {
 	}
 
 	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount,
-			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock) {
+			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock, List rusherList) {
 
 		//testcode        public void readPNGchunk(File fileIn, String keyword) throws IOException {
 		try {
@@ -1608,7 +1670,7 @@ public class Mazerush extends JFrame {
 				mazeSelectPlayersprite(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
 						thumbnailheight, thumbnailwidth);
 				mazeSelectSpriteSelector(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
-						thumbnailheight, thumbnailwidth, bouncylock);
+						thumbnailheight, thumbnailwidth, bouncylock, rusherList);
 				if ((listlocation + cursory) == lastmaze)
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3 / 5, 0, lasthighscoreidx);
 				else
