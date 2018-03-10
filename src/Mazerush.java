@@ -140,6 +140,9 @@ public class Mazerush extends JFrame {
 		int spritesheet_player_height, spritesheet_player_width;
 		int coinsCollected = 0;
 		int coinCollisions = 0;
+		boolean clockstarted = false;
+		int rushian = 0;
+		
 	}
 	static class Rusher {
 		BufferedImage spritesheet = null;
@@ -162,7 +165,7 @@ public class Mazerush extends JFrame {
 
 		{
 			try {
-				spritesheet = ImageIO.read(new URL("file:playersprites/coin.png"));
+				spritesheet = ImageIO.read(new URL("file:resources/coin.png"));
 			} catch (IOException e) {
 				System.out.println(e);
 			}
@@ -220,7 +223,7 @@ public class Mazerush extends JFrame {
 
 	public void run() {
 		Rusher rusher = new Rusher();
-		List rusherList = getRushers("playersprites/");
+		List rusherList = getRushers("rushians/");
 		Player player = new Player();
 		
 		int current_maze = 1;
@@ -251,7 +254,7 @@ public class Mazerush extends JFrame {
 		player.spritesheet_player_width = 0;
 		player.spritesheet_player_height = 0;
 		try {
-			URL player_url = new URL("file:playersprites/zombie.png");
+			URL player_url = new URL("file:rushians/zombie.png");
 			player.spritesheet = ImageIO.read(player_url);
 			player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 			player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
@@ -265,8 +268,18 @@ public class Mazerush extends JFrame {
 		AnimatedSprite bouncylock = new AnimatedSprite();
 		bouncylock.numFrames = 8;
 		try{
-			URL lockURL = new URL("file:playersprites/BouncyLock.png");
+			URL lockURL = new URL("file:resources/BouncyLock.png");
 			bouncylock.spritesheet = ImageIO.read(lockURL);
+
+		}
+		catch (IOException e){
+			System.out.println(e);
+		}
+		AnimatedSprite arrow = new AnimatedSprite();
+		arrow.numFrames = 8;
+		try{
+			URL lockURL = new URL("file:resources/arrow.png");
+			arrow.spritesheet = ImageIO.read(lockURL);
 
 		}
 		catch (IOException e){
@@ -283,11 +296,11 @@ public class Mazerush extends JFrame {
 		// GAME KERNAL
 		while (current_maze > 0) {
 			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx,
-					scoreArrays, bouncylock, rusherList);
+					scoreArrays, bouncylock, arrow, rusherList);
 			if (current_maze > 0) {
 				Mixer mixer = getmixer("resources/Waiting for loaders.mod");
 				playsong(mixer);
-				doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d, coins);
+				doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d, coins, rusherList);
 				mixer.stopPlayback();
 			} else if (current_maze < 0) {
 				// ------------------------------------POW TEST CODE
@@ -324,6 +337,7 @@ public class Mazerush extends JFrame {
 		maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
 		maze.maze_pixel_width = maze.maze_img.getWidth();
 		maze.maze_pixel_height = maze.maze_img.getHeight();
+		player.clockstarted = false;
 	}
 
 	public long getmazeruntime(String maze_pow, int current_maze, Player player, JSONArray mazelist, Maze maze,
@@ -343,7 +357,7 @@ public class Mazerush extends JFrame {
 	}
 
 	public void doMazeRun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays,
-			Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d, List coins) {
+			Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d, List coins, List rusherList) {
 
 		boolean fanfareplaying = false;
 		long completed_delay = 0;
@@ -435,7 +449,7 @@ public class Mazerush extends JFrame {
 
 				}
 				if (check_if_highscore(player.completedtime, scoreArrays)) {
-					String initials = enter_highscores(backbuffer, buffer, player);
+					String initials = enter_highscores(backbuffer, buffer, player, rusherList);
 					if (initials != null) {
 						scoreArrays.times[9] = player.completedtime;
 						scoreArrays.initials[9] = initials;
@@ -486,7 +500,7 @@ public class Mazerush extends JFrame {
 									maze.maze_x % maze_zoom, maze.maze_y % maze_zoom, FRAME_WIDTH + maze_zoom * maze_overscan_x,
 									FRAME_HEIGHT + maze_zoom * maze_overscan_y, null);
 					draw_coins(backbuffer, coins, maze);
-					draw_player(backbuffer, maze, player);
+					draw_player(backbuffer, maze, player, rusherList);
 					backbuffer.setFont(timeFont);
 					backbuffer.setColor(Color.white);
 					backbuffer.fillRect(5, 20, 185, 25);
@@ -600,8 +614,9 @@ public class Mazerush extends JFrame {
 			player.maze_completed = true;
 		if (!player.maze_completed)
 			player.completedtime += objectupdate_bandwidth;
-		if (player_on_color(mazeorigincolor, 0, 0, maze, player))
+		if (player_on_color(mazeorigincolor, 0, 0, maze, player) && !player.clockstarted)
 			player.completedtime = 0;
+		else if (!player.clockstarted) player.clockstarted=true;
 		return (player);
 	}
 
@@ -629,7 +644,7 @@ public class Mazerush extends JFrame {
 		return (maze.maze_y + hs_chars_xy[i][1] * maze_zoom);
 	}
 
-	public String enter_highscores(Graphics background_graphics, BufferStrategy buffer, Player player) {
+	public String enter_highscores(Graphics background_graphics, BufferStrategy buffer, Player player, List rusherList) {
 		int highscore_enter_delay = 3;
 		String initials = null;
 		Graphics highscore_graphics = null;
@@ -712,7 +727,7 @@ public class Mazerush extends JFrame {
 				// BufferedImage maze_img, int maze_pixel_width, int
 				// maze_pixel_height) {
 
-				draw_player(highscore_graphics, hsmaze, player);
+				draw_player(highscore_graphics, hsmaze, player, rusherList);
 				if (!buffer.contentsLost())
 
 					buffer.show();
@@ -794,8 +809,9 @@ public class Mazerush extends JFrame {
 		return (true);
 	}
 
-	public void draw_player(Graphics backbuffer, Maze maze, Player player) {
-		BufferedImage player_img = player.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
+	public void draw_player(Graphics backbuffer, Maze maze, Player player, List rusherList) {
+		Rusher rusher = (Rusher) rusherList.get(player.rushian);
+		BufferedImage player_img = rusher.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
 				player.player_facing_direction * 16, player.player_width / 2, player.player_height / 2);
 		backbuffer.drawImage(player_img, player.player_x - player.player_center_w,
 				player.player_y - player.player_center_h, player.player_width, player.player_height, null);
@@ -937,78 +953,6 @@ public class Mazerush extends JFrame {
 		return (true);
 	}
 
-	public boolean player_on_red(int dx, int dy, Maze maze, Player player) {
-
-		int pxright = (player.player_x + dx - maze.maze_x + player.player_center_w) / maze_zoom;
-		int pybottom = (player.player_y + dy - maze.maze_y + player.player_center_h) / maze_zoom;
-		int pxleft = (player.player_x + dx - maze.maze_x - player.player_center_w) / maze_zoom;
-		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) / maze_zoom;
-
-		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only
-			// bottom
-			// and
-			// right
-			// cause
-			// outofbounds
-			// exception
-			// so
-			// we
-			// just
-			// check
-			// those
-			return (false);
-
-		if (maze.maze_img.getRGB(pxleft, pytop) == 0xffff0000)
-			return (true);
-
-		if (maze.maze_img.getRGB(pxright, pytop) == 0xffff0000)
-			return (true);
-
-		if (maze.maze_img.getRGB(pxleft, pybottom) == 0xffff0000)
-			return (true);
-
-		if (maze.maze_img.getRGB(pxright, pybottom) == 0xffff0000)
-			return (true);
-
-		return (false);
-	}
-
-	// TODO combine player on green and player on rd
-	public boolean player_on_green(int dx, int dy, Maze maze, Player player) {
-
-		int pxright = (player.player_x + dx - maze.maze_x + player.player_center_w) / maze_zoom;
-		int pybottom = (player.player_y + dy - maze.maze_y + player.player_center_h) / maze_zoom;
-		int pxleft = (player.player_x + dx - maze.maze_x - player.player_center_w) / maze_zoom;
-		int pytop = (player.player_y + dy - maze.maze_y - player.player_center_h) / maze_zoom;
-
-		if (pxright >= maze.maze_pixel_width || pybottom >= maze.maze_pixel_height) // only
-			// bottom
-			// and
-			// right
-			// cause
-			// outofbounds
-			// exception
-			// so
-			// we
-			// just
-			// check
-			// those
-			return (false);
-
-		if (maze.maze_img.getRGB(pxleft, pytop) == 0xff00ff00)
-			return (true);
-
-		if (maze.maze_img.getRGB(pxright, pytop) == 0xff00ff00)
-			return (true);
-
-		if (maze.maze_img.getRGB(pxleft, pybottom) == 0xff00ff00)
-			return (true);
-
-		if (maze.maze_img.getRGB(pxright, pybottom) == 0xff00ff00)
-			return (true);
-
-		return (false);
-	}
 
 	/*
 	 * rle = "R30D78L12"
@@ -1504,46 +1448,15 @@ public class Mazerush extends JFrame {
 	}
 	//title=zombie.png,coins=215,music=zombie.mod,acceleration=8,bounce=0,deceleration=8,maxspeed=8
 	public static void mazeSelectSpriteSelector(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
-			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock, List rusherList) {
+			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock, AnimatedSprite arrow, List rusherList) {
 		player.player_moving_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
 		player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 		player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
 	
 		BufferedImage player_img = null;
-		/*
-		BufferedImage spritesheet[] = { null, null, null, null };
-		try {
-			URL player_url = new URL("file:playersprites/zombie.png");
-			spritesheet[0] = ImageIO.read(player_url);
-
-		} catch (IOException e) {
-			System.out.println(e);
-		}
-		try {
-			URL player_url = new URL("file:playersprites/armlesszombie.png");
-			spritesheet[1] = ImageIO.read(player_url);
-
-		} catch (IOException e) {
-			System.out.println(e);
-		}
-		try {
-			URL player_url = new URL("file:playersprites/robot.png");
-			spritesheet[2] = ImageIO.read(player_url);
-
-		} catch (IOException e) {
-			System.out.println(e);
-		}
-		try {
-			URL player_url = new URL("file:playersprites/ghost.png");
-			spritesheet[3] = ImageIO.read(player_url);
-
-		} catch (IOException e) {
-			System.out.println(e);
-		}
-		*/
 		int y = 325;
-		int x = 480;
+		int x = 400;
 		for (int i = 0; i < rusherList.size(); i++) {
 			Rusher rusher = (Rusher) rusherList.get(i);
 			player_img = rusher.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
@@ -1555,12 +1468,17 @@ public class Mazerush extends JFrame {
 			drawAnimatedSprite(bouncylock, graphics);
 			bouncylock.animationFrame ++;
 			x += 40;
+			
+			arrow.x = 400 + player.rushian * 40;
+			arrow.y = y + 16;
+			drawAnimatedSprite(arrow, graphics);
+			arrow.animationFrame ++;
 		}
 	}
 	public static void drawBouncyLock(int x, int y, Graphics graphics){
 		BufferedImage lockImg = null;
 		try{
-			URL lockURL = new URL("file:playersprites/BouncyLock.png");
+			URL lockURL = new URL("file:resources/BouncyLock.png");
 			lockImg = ImageIO.read(lockURL);
 		}
 		catch (IOException e){
@@ -1579,15 +1497,20 @@ public class Mazerush extends JFrame {
 
 	}
 	public static void mazeSelectPlayersprite(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
-			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
+			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, List rusherList) {
 		player.player_moving_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
 		player.spritesheet_player_width = player.spritesheet.getWidth(null) / spritesheeth;
 		player.spritesheet_player_height = player.spritesheet.getHeight(null) / spritesheetv;
 		BufferedImage player_img = null;
-
-		player_img = player.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
+		
+		Rusher rusher = (Rusher) rusherList.get(player.rushian);
+		player_img = rusher.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
 				player.player_facing_direction * 16, player.spritesheet_player_width, player.spritesheet_player_height);
+		
+		
+//		player_img = player.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
+	//			player.player_facing_direction * 16, player.spritesheet_player_width, player.spritesheet_player_height);
 		player.animationFrame++;
 		if (player.animationFrame >= MaxanimationFrames)
 			player.animationFrame = 0;
@@ -1621,11 +1544,11 @@ public class Mazerush extends JFrame {
 	}
 
 	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount,
-			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock, List rusherList) {
+			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock, AnimatedSprite arrow, List rusherList) {
 
 		//testcode        public void readPNGchunk(File fileIn, String keyword) throws IOException {
 		try {
-			File file = new File("playersprites/zombie.png");
+			File file = new File("rushians/zombie.png");
 
 			System.out.println("zombie.png Title = " + readPNGchunk(file, "Title"));
 
@@ -1668,9 +1591,9 @@ public class Mazerush extends JFrame {
 						thumbnailwidth);
 
 				mazeSelectPlayersprite(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
-						thumbnailheight, thumbnailwidth);
+						thumbnailheight, thumbnailwidth, rusherList);
 				mazeSelectSpriteSelector(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
-						thumbnailheight, thumbnailwidth, bouncylock, rusherList);
+						thumbnailheight, thumbnailwidth, bouncylock, arrow, rusherList);
 				if ((listlocation + cursory) == lastmaze)
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3 / 5, 0, lasthighscoreidx);
 				else
@@ -1699,6 +1622,10 @@ public class Mazerush extends JFrame {
 				if (listlocation > 1)
 					listlocation--;
 			}
+			if ((keyboard.keyDownOnce(KeyEvent.VK_LEFT) || keyboard.keyDownOnce(KeyEvent.VK_A)) && player.rushian > 0)
+				player.rushian --;
+			if ((keyboard.keyDownOnce(KeyEvent.VK_RIGHT) || keyboard.keyDownOnce(KeyEvent.VK_D)) && player.rushian <= (rusherList.size() - 2))
+				player.rushian ++; //TODO rusherlist size is a liar
 		}
 		if (keyboard.keyDownOnce(KeyEvent.VK_ENTER)) {
 			selectTransition3D(buffer, listlocation, cursory, thumbnailzoom, thumbnailheight, thumbnailwidth, mazelist);
@@ -1798,21 +1725,6 @@ public class Mazerush extends JFrame {
 
 			}
 		}
-	}
-
-	public static int mazeselectkeycheck(KeyboardInput keyboard) {
-		int keypressed = 0;
-		int left = 1;
-		int right = 2;
-		int enter = 3;
-		if ((keyboard.keyDown(KeyEvent.VK_A) || keyboard.keyDown(KeyEvent.VK_LEFT)))
-			keypressed = left;
-
-		if ((keyboard.keyDown(KeyEvent.VK_ENTER)))
-			keypressed = enter;
-		if ((keyboard.keyDown(KeyEvent.VK_D) || keyboard.keyDown(KeyEvent.VK_RIGHT)))
-			keypressed = right;
-		return (keypressed);
 	}
 
 	public static void showmazes(int listlocation, BufferedImage[] mazeimages, Graphics screen) {
