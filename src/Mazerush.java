@@ -141,10 +141,11 @@ public class Mazerush extends JFrame {
 		int coinsCollected = 0;
 		int coinCollisions = 0;
 	}
-	class Rusher {
-		BufferedImage spritesheet;
-		int price;
-		String name;
+	static class Rusher {
+		BufferedImage spritesheet = null;
+		int price = 0;
+		String name = "none";
+		{}
 	}
 	class AnimatedSprite {
 		BufferedImage spritesheet;
@@ -218,9 +219,10 @@ public class Mazerush extends JFrame {
 	}
 
 	public void run() {
+		Rusher rusher = new Rusher();
 		List rusherList = getRushers("playersprites/");
 		Player player = new Player();
-
+		
 		int current_maze = 1;
 		// TODO File fanfare = new File("resources/fanfare1.wav");
 
@@ -389,7 +391,6 @@ public class Mazerush extends JFrame {
 						e1.printStackTrace();
 					}
 				}
-				FrameValid = false;
 				if ((player.animationFrame % (AnimationSpeed * 2)) == 0 && player.moving) {
 					try {
 						sampleplayback(footsteps);
@@ -406,7 +407,9 @@ public class Mazerush extends JFrame {
 				// Poll the keyboard - may want to move into update object while
 				// loop
 				keyboard.poll();
-
+				if (objectupdatetick == 0)
+					FrameValid = false;
+				
 			}
 			if (player.maze_completed && !fanfareplaying) {
 				completed_delay = System.currentTimeMillis() + 2 * 500;
@@ -1474,28 +1477,25 @@ public class Mazerush extends JFrame {
 		return (mazelist);
 	}
 	public static List getRushers(String rushersDir){
-		List rushers = new ArrayList();
+		List<Rusher> rushers = new ArrayList<Rusher>();
 		File rusherFile = null;
 		Path dir = Paths.get("");
 		dir = dir.resolve(rushersDir);
-		Rusher tempRusher = null;
 		// System.out.format("%s%n",dir.toAbsolutePath());
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.png")) {
 			for (Path entry : stream) {
-			//	String fname = new String(entry.getFileName().toString());
-				System.out.println(entry.getFileName());
-				rusherFile = new File(entry.getFileName().toString());
-				System.out.println("HEY!");
+			    String fname = new String(entry.getFileName().toString());
+				rusherFile = new File(rushersDir+fname);
+				Rusher tempRusher = new Rusher();
+				
 				tempRusher.spritesheet = ImageIO.read(rusherFile);
-				System.out.println("yo!");
+				tempRusher.name = fname;
+				System.out.println(tempRusher);
 				
 				rushers.add(tempRusher);
-				
-				/*
-				 * if(fname.contains("maze")) { mazelist.add(fname); }
-				 */
 			}
 		} catch (IOException x) {
+			System.out.println("can't read sprite file");
 			System.err.println(x);
 		}
 
@@ -1950,8 +1950,8 @@ public class Mazerush extends JFrame {
 		backGraphics.drawImage(titleimage, FRAME_WIDTH / 2 - titleimage.getWidth() / 2, FRAME_HEIGHT / 4, null);
 
 		Graphics frontGraphics = null;
-		//Mixer mixer = getmixer("resources/sommargalaxen_short.mod");
-		//playsong(mixer);
+		Mixer mixer = getmixer("resources/sommargalaxen_short.mod");
+		playsong(mixer);
 		boolean framevalid = false;
 		objectupdatetick = 0;
 		while (!keyboard.poll()) {
@@ -1962,7 +1962,8 @@ public class Mazerush extends JFrame {
 				objectupdatetick--;
 				yoffset = Math.sin(waveangle) * splashTextWaveHeight;
 				waveangle += wavespeed;
-				framevalid = false;
+				if (objectupdatetick == 0)
+					framevalid = false;
 				if (objectupdatetick>0)  System.out.println("ticks =" + objectupdatetick);
 				//System.out.println("update end");
 				
@@ -1995,9 +1996,8 @@ public class Mazerush extends JFrame {
 
 		}
 		frontGraphics.dispose();
-		while (keyboard.poll()) {
-		} // wait for key to be released
-		//mixer.stopPlayback();
+		while (keyboard.poll()) {} // wait for key to be released
+		mixer.stopPlayback();
 	}
 	
 	
