@@ -1,7 +1,10 @@
 
+import java.applet.Applet;
+import java.applet.AudioClip;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -14,6 +17,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -71,9 +75,9 @@ public class Mazerush extends JFrame {
 			KernalSleepTime = 10, pup = 0b0001, pdown = 0b0010, pleft = 0b0100, pright = 0b1000, pstill = 0,
 			AnimationSpeed = 10, // was 10,Higher number = slower
 			MaxanimationFrames = 4 * AnimationSpeed;
-	static String goalsplash = "Object: finish the maze as fast as possible",
-			keyssplash = "WASD or arrow keys to move\nEnter to skip forward\nBackspace to skip back",
-			creditssplash = "Credits", anykeysplash = "Press any key to continue";
+	static String goalsplash = "Run the maze and collect coins",
+			keyssplash = "WASD or arrow keys to move\nESC to exit",
+			creditssplash = "by Nicky & Specter", anykeysplash = "Press A Key";
 	static final int widthtenth = FRAME_WIDTH / 10, heighttenth = FRAME_HEIGHT / 10, spritesheeth = 4, // how
 			// many
 			// sprite
@@ -101,7 +105,8 @@ public class Mazerush extends JFrame {
 	static int objectupdatetick = 0;
 	static KeyboardInput keyboard = new KeyboardInput(); // Keyboard polling
 	Canvas canvas; // Our drawing component
-
+	static Font gameFont = null;
+	
 	public Mazerush() {
 		setIgnoreRepaint(true);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -225,7 +230,16 @@ public class Mazerush extends JFrame {
 		Rusher rusher = new Rusher();
 		List rusherList = getRushers("rushians/");
 		Player player = new Player();
+		//register FONT
+		//Font gameFont = null;
+		try {
+		     //Returned font is of pt size 1
+		     gameFont = Font.createFont(Font.TRUETYPE_FONT, new File("resources/prstartk.ttf"));
 		
+		} catch (IOException|FontFormatException e) {
+			System.out.println(e);//Handle exception
+		}
+	    
 		int current_maze = 1;
 		// TODO File fanfare = new File("resources/fanfare1.wav");
 
@@ -1466,14 +1480,15 @@ public class Mazerush extends JFrame {
 			bouncylock.x = x;
 			bouncylock.y = y;
 			drawAnimatedSprite(bouncylock, graphics);
-			bouncylock.animationFrame ++;
 			x += 40;
 			
 			arrow.x = 400 + player.rushian * 40;
 			arrow.y = y + 16;
 			drawAnimatedSprite(arrow, graphics);
-			arrow.animationFrame ++;
 		}
+		bouncylock.animationFrame ++;
+		arrow.animationFrame ++;
+		
 	}
 	public static void drawBouncyLock(int x, int y, Graphics graphics){
 		BufferedImage lockImg = null;
@@ -1521,6 +1536,8 @@ public class Mazerush extends JFrame {
 	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
 		Font MazeSelectFont = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+		MazeSelectFont =  gameFont.deriveFont(16f);
+
 		graphics.setFont(MazeSelectFont);
 		graphics.setColor(Color.white);
 		BufferedImage mazeimage = null;
@@ -1578,11 +1595,12 @@ public class Mazerush extends JFrame {
 		 */
 		converthighscores(gethighscoretable(mazelist.get(listlocation + cursory).toString()), scoreArrays);
 		Graphics graphics = buffer.getDrawGraphics();
+		objectupdatetick = 0;
 
 		while (!(keyboard.keyDown(KeyEvent.VK_ENTER) || keyboard.keyDown(KeyEvent.VK_ESCAPE)
 				|| keyboard.keyDown(KeyEvent.VK_R))) {
-			while ((objectupdatetick >> 2) > 0) {
-				objectupdatetick = 0;
+			if (objectupdatetick > 0) {
+				objectupdatetick --;
 
 				graphics.setColor(Color.BLACK);
 				graphics.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
@@ -1601,8 +1619,7 @@ public class Mazerush extends JFrame {
 				buffer.show();
 
 			}
-
-			keyboard.poll();
+            keyboard.poll();
 			if (keyboard.keyDownOnce(KeyEvent.VK_W) || keyboard.keyDownOnce(KeyEvent.VK_UP)) {
 				cursory -= 1;
 				converthighscores(gethighscoretable(mazelist.get(listlocation + cursory).toString()), scoreArrays);
@@ -1745,7 +1762,36 @@ public class Mazerush extends JFrame {
 		converthighscores(gethighscoretable(mazelist.get(current_maze).toString()), scoreArrays);
 		return (mazeimage);
 	}
+	public static class Sound {
 
+	    
+	    private static AudioClip clip;
+        /*
+	    private Sound(String filename) throws MalformedURLException {
+	    	clip = Applet.newAudioClip(new URL("file:"+filename));
+	        //WAS: clip = Applet.newAudioClip(getClass().getClassLoader().getResource(name));
+	    }*/
+
+	    public void play() {
+	        new Thread() {
+	            public void run() {
+	                clip.play();
+	            }
+	        }.start();
+	    }
+
+		public static AudioClip  sounds(File fileName) throws MalformedURLException {
+			clip = Applet.newAudioClip(new URL("file:"+fileName));
+			return clip;
+		}
+
+	}
+	public static void sampleplayback_test(final File fileName)
+			throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException 
+	{
+		Sound.sounds(fileName).play();
+		
+	}
 	public static void sampleplayback(final File fileName)
 			throws IOException, UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
 		class AudioListener implements LineListener {
@@ -1778,12 +1824,12 @@ public class Mazerush extends JFrame {
 
 				try {
 					AudioInputStream ais = AudioSystem.getAudioInputStream(fileName);
-					AudioFormat format = ais.getFormat();
+					//AudioFormat format = ais.getFormat();
 					//https://stackoverflow.com/questions/18942424/error-playing-audio-file-from-java-via-pulseaudio-on-ubuntu
-					DataLine.Info info = new DataLine.Info(Clip.class, format);
-					Clip clip = (Clip)AudioSystem.getLine(info);
+					//DataLine.Info info = new DataLine.Info(Clip.class, format);
+					//wasClip clip = (Clip)AudioSystem.getLine(info);
 
-					//was Clip clip = AudioSystem.getClip();
+					Clip clip = AudioSystem.getClip(null);
 					clip.open(ais);
 					clip.addLineListener(listener);
 					clip.start();
@@ -1808,7 +1854,9 @@ public class Mazerush extends JFrame {
 
 	public static void splashtext(Graphics splashgraphics, double yoffset) {
 		Font splashFont = new Font("SansSerif", Font.BOLD, 20);
+		 splashFont =  gameFont.deriveFont(20f);
 
+		
 		splashgraphics.setFont(splashFont);
 		splashgraphics.setColor(Color.white);
 		splashgraphics.drawString(goalsplash, tenthx(goalsplashx), (int) (tenthy(goalsplashy) + yoffset));
