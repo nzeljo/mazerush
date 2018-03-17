@@ -61,6 +61,9 @@ import de.quippy.javamod.multimedia.MultimediaContainerManager;
 import de.quippy.javamod.multimedia.mod.ModContainer;
 import de.quippy.javamod.system.Helpers;
 
+import java.util.zip.CRC32;
+import java.io.ByteArrayOutputStream;
+
 public class Mazerush extends JFrame {
 	static final long serialVersionUID = 1L;
 	static final int FRAME_WIDTH = 640, 
@@ -70,7 +73,9 @@ public class Mazerush extends JFrame {
 
 			objectupdate_bandwidth = 14, // Was 14, //time in milliseconds
 			// between object updates
-			mazeselect_bandwidth = 200, coinprobability = 100, // was 10
+			mazeselect_bandwidth = 200,
+			coinprobability = 25, // was 10
+			coinreward = 1, //in seconds per coin
 			maze_subimage_width = FRAME_WIDTH / maze_zoom, maze_subimage_height = FRAME_HEIGHT / maze_zoom,
 			KernalSleepTime = 10, pup = 0b0001, pdown = 0b0010, pleft = 0b0100, pright = 0b1000, pstill = 0,
 			AnimationSpeed = 10, // was 10,Higher number = slower
@@ -186,6 +191,7 @@ public class Mazerush extends JFrame {
 
 	class ScoreArrays {
 		Long[] times = new Long[10];
+		int[] coins = new int[10];
 		String[] initials = new String[10];
 		String[] pows = new String[10];
 		/*
@@ -462,10 +468,11 @@ public class Mazerush extends JFrame {
 					System.out.println(e);
 
 				}
-				if (check_if_highscore(player.completedtime, scoreArrays)) {
+				if (checkIfHighscore(player.completedtime, scoreArrays)) {
 					String initials = enter_highscores(backbuffer, buffer, player, rusherList);
 					if (initials != null) {
 						scoreArrays.times[9] = player.completedtime;
+						scoreArrays.coins[9] = player.coinsCollected; 
 						scoreArrays.initials[9] = initials;
 						scoreArrays.pows[9] = player.rle;
 						sorthighscores(scoreArrays);
@@ -596,7 +603,22 @@ public class Mazerush extends JFrame {
 	 */
 
 	public List placeCoins(List coins, Maze maze) {
+		
+		CRC32 c32 = new CRC32();
+		ByteArrayOutputStream baos = null;
+		try {
+			baos = new ByteArrayOutputStream();
+			ImageIO.write(maze.maze_img, "png", baos);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				baos.close();
+			} catch (Exception e) {
+			}
+		}
 		Random rnd = new Random();
+		rnd.setSeed(c32.getValue());
 		for (int my = 0; my < maze.maze_pixel_height; my += 2)
 			for (int mx = 0; mx < maze.maze_pixel_width; mx += 2) {
 				if (maze.maze_img.getRGB(mx, my) == mazepathcolor) {
@@ -1120,7 +1142,7 @@ public class Mazerush extends JFrame {
 
 		// JSONObject mazeshigh = new JSONObject();
 		for (int i = 0; i < 10; i++) {
-			scores.add(scoreArrays.times[i]);
+			scores.add(getScore(scoreArrays, i));
 			initials.add(scoreArrays.initials[i]);
 			pows.add(scoreArrays.pows[i]);
 		}
@@ -1193,8 +1215,8 @@ public class Mazerush extends JFrame {
 		}
 	}
 
-	public static boolean check_if_highscore(long completedtime, ScoreArrays scoreArrays) {
-		if (completedtime < scoreArrays.times[9])
+	public static boolean checkIfHighscore(long completedtime, ScoreArrays scoreArrays) {
+		if (completedtime < getScore(scoreArrays, 9))
 			return (true);
 		return (false);
 	}
@@ -1226,7 +1248,7 @@ public class Mazerush extends JFrame {
 
 	public static int findhighscore(ScoreArrays scoreArrays, Long score, String initials) {
 		for (int index = 0; index < 10; index++) {
-			if (scoreArrays.times[index] == score && scoreArrays.initials[index] == initials) {
+			if (getScore(scoreArrays, index) == score && scoreArrays.initials[index] == initials) {
 				return (index);
 			}
 		}
@@ -1256,7 +1278,7 @@ public class Mazerush extends JFrame {
 			int printy = starty + ystep * index;
 			// String temp =(String)scores.get(index);
 			// long time = Long.parseLong(temp);
-			long time = scoreArrays.times[index];
+			long time = getScore(scoreArrays, index);
 			if (index == lasthighscoreidx) // TODO does not work, need to fix
 				graphics.setColor(Color.blue);
 			else
@@ -1271,34 +1293,45 @@ public class Mazerush extends JFrame {
 		}
 	}
 
+	public static long getScore(ScoreArrays scoreArrays, int index){
+		return(scoreArrays.times[index] - scoreArrays.coins[index]*coinreward);
+	}
+	
 	static int partition(ScoreArrays scoreArrays, int left, int right)
 
 	{
 
 		int i = left, j = right;
 
-		Long tmp;
+		Long tmpl;
+		int tmpi;
 		String stmp;
 
-		Long pivot = scoreArrays.times[(left + right) / 2];
+		Long pivot = getScore(scoreArrays, (left + right) / 2);
 
 		while (i <= j) {
 
-			while (scoreArrays.times[i] < pivot)
+			while (getScore(scoreArrays, i) < pivot)
 
 				i++;
 
-			while (scoreArrays.times[j] > pivot)
+			while (getScore(scoreArrays, j) > pivot)
 
 				j--;
 
 			if (i <= j) {
 
-				tmp = scoreArrays.times[i];
+				tmpl = scoreArrays.times[i];
 
 				scoreArrays.times[i] = scoreArrays.times[j];
 
-				scoreArrays.times[j] = tmp;
+				scoreArrays.times[j] = tmpl;
+				
+				tmpi = scoreArrays.coins[i];
+
+				scoreArrays.coins[i] = scoreArrays.coins[j];
+
+				scoreArrays.coins[j] = tmpi;
 
 				stmp = scoreArrays.initials[i];
 
