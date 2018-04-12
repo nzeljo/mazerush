@@ -1260,36 +1260,39 @@ public class Mazerush extends JFrame {
 		int right = 9;
 		scoreQuickSort(sortedScoreArrays, left, right);
 	}
-
-	public static void displayhighscores(ScoreArrays scoreArrays, Graphics graphics, int hsx, int hsy,
+    public static void displayhighscores(ScoreArrays scoreArrays, Graphics graphics, int hsx, int hsy,
 			int lasthighscoreidx) {
+    	final int xpos_rank = 10,
+    		    xpos_initials = xpos_rank + 44,
+    		    xpos_coins = xpos_initials + 56,
+    		    xpos_time = xpos_coins + 44,
+    		    xpos_width = xpos_time + 64;
+    			
 		// print lasths
 		sorthighscores(scoreArrays);
 		int left = 0;
 		int right = 9;
 		scoreQuickSort(scoreArrays, left, right);
-		final int ystep = 25;
-		final int starty = hsy + ystep;
-		graphics.setColor(Color.white);
-		graphics.fillRect(hsx - 5, hsy - 20, 206, ystep * 11);
+		final int ystep = 22;
+		final int starty = hsy + ystep*2;
 		graphics.setColor(Color.black);
-		graphics.drawString(String.format("HIGHSCORES"), hsx, hsy);
+		graphics.fillRect(hsx , hsy , hsx + xpos_width, ystep * 12);
+		graphics.setColor(Color.yellow);
+		graphics.drawString(String.format("HIGHSCORES"), hsx, hsy + ystep);
 		for (int index = 0; index < 10; index++) {
 			int printy = starty + ystep * index;
 			// String temp =(String)scores.get(index);
 			// long time = Long.parseLong(temp);
+			graphics.setColor(Color.blue);
+			graphics.drawString(String.format("%d", index + 1), hsx + xpos_rank, printy);
 			long time = getScore(scoreArrays, index);
 			if (index == lasthighscoreidx) // TODO does not work, need to fix
-				graphics.setColor(Color.blue);
+				graphics.setColor(Color.red);
 			else
-				graphics.setColor(Color.black);
-			// graphics.drawString(String.format("%d. %s (%d.%02d)", index + 1,
-			// sortedinitials[index], time / 1000, time % 1000 / 10), 430,
-			// printy);
-			graphics.drawString(String.format("%d. %s", index + 1, scoreArrays.initials[index]), hsx, printy);
-			graphics.drawString(String.format("(%d.%02d)", time / 1000, time % 1000 / 10), hsx + 86, printy);
-			// graphics.drawString(String.format("Time: %04d.%02d",
-			// completedtime / 1000, completedtime % 1000), 10, 40);
+				graphics.setColor(Color.white);
+			graphics.drawString(String.format("%s", scoreArrays.coins[index]), hsx + xpos_coins, printy);
+			graphics.drawString(String.format("%s", scoreArrays.initials[index]), hsx + xpos_initials, printy);
+			graphics.drawString(String.format("%d.%02d", time / 1000, time % 1000 / 10), hsx + xpos_time, printy);
 		}
 	}
 
