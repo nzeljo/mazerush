@@ -1136,23 +1136,26 @@ public class Mazerush extends JFrame {
 	}
 
 	public static void savehighscores(String maze, ScoreArrays scoreArrays) {
-		JSONArray scores = new JSONArray();
+		JSONArray times = new JSONArray();
 		JSONArray initials = new JSONArray();
 		JSONArray pows = new JSONArray();
+		JSONArray coins = new JSONArray();
 
 		// JSONObject mazeshigh = new JSONObject();
 		for (int i = 0; i < 10; i++) {
-			scores.add(getScore(scoreArrays, i));
+			times.add(getScore(scoreArrays, i));
 			initials.add(scoreArrays.initials[i]);
 			pows.add(scoreArrays.pows[i]);
+			coins.add(scoreArrays.coins[i]);
 		}
 
 		JSONObject mazehigh = new JSONObject();
 
 		mazehigh.put("mazename", maze);
-		mazehigh.put("highscores", scores);
+		mazehigh.put("times", times);
 		mazehigh.put("initials", initials);
 		mazehigh.put("pows", pows);
+		mazehigh.put("coins", coins);
 
 		// attempt to write new highscore JSONObject to file highscores.json
 		try {
@@ -1176,19 +1179,19 @@ public class Mazerush extends JFrame {
 
 		} catch (IOException | ParseException e) {
 			Random rnd = new Random();
-			rnd.setSeed(555);
+		//	rnd.setSeed(555);
 			// if highscore table doesn't exist, create one.
 
-			JSONArray scores = new JSONArray();
+			JSONArray times = new JSONArray();
 			JSONArray initials = new JSONArray();
 			JSONArray pows = new JSONArray();
+			JSONArray coins = new JSONArray();
 
 			JSONObject mazeshigh = new JSONObject();
 			for (int i = 0; i < 10; i++) {
-				scores.add(new Long((rnd.nextLong() & 0xffff) + 0x8000));
-				int ch = rnd.nextInt(26) + 65;
-				char initchar = new Character((char) ch);
-				initials.add(Character.toString(initchar));
+				times.add(new Long((rnd.nextLong() & 0xffff) + 0x8000));
+				coins.add(new Long(rnd.nextLong() & 0x1f));
+				initials.add("bot");
 				pows.add(new String(""));
 
 			}
@@ -1196,9 +1199,10 @@ public class Mazerush extends JFrame {
 			JSONObject mazehigh = new JSONObject();
 
 			mazehigh.put("mazename", maze);
-			mazehigh.put("highscores", scores);
+			mazehigh.put("times", times);
 			mazehigh.put("initials", initials);
 			mazehigh.put("pows", pows);
+			mazehigh.put("coins", coins);
 
 			// attempt to write new highscore JSONObject to file highscores.json
 			try {
@@ -1222,12 +1226,13 @@ public class Mazerush extends JFrame {
 	}
 
 	public static void converthighscores(JSONObject mazescores, ScoreArrays scoreArrays) {
-		JSONArray scores = (JSONArray) mazescores.get("highscores");
+		JSONArray times = (JSONArray) mazescores.get("times");
 		JSONArray initials = (JSONArray) mazescores.get("initials");
 		JSONArray pows = (JSONArray) mazescores.get("pows");
+		JSONArray coins = (JSONArray) mazescores.get("coins");
 
 		for (int index = 0; index < 10; index++) {
-			scoreArrays.times[index] = (Long) scores.get(index); // (Long) type
+			scoreArrays.times[index] = (Long) times.get(index); // (Long) type
 			// conversion
 			// between
 			// JSON and
@@ -1235,6 +1240,9 @@ public class Mazerush extends JFrame {
 			// objects
 			scoreArrays.initials[index] = (String) initials.get(index);
 			scoreArrays.pows[index] = (String) pows.get(index);
+			
+			Long coinL = (Long) coins.get(index);
+			scoreArrays.coins[index] = coinL.intValue();
 
 		}
 	}
@@ -1285,7 +1293,8 @@ public class Mazerush extends JFrame {
 			// long time = Long.parseLong(temp);
 			graphics.setColor(Color.blue);
 			graphics.drawString(String.format("%d", index + 1), hsx + xpos_rank, printy);
-			long time = getScore(scoreArrays, index);
+			long time = scoreArrays.times[index];
+//			long time = getScore(scoreArrays, index);
 			if (index == lasthighscoreidx) // TODO does not work, need to fix
 				graphics.setColor(Color.red);
 			else
