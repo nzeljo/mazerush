@@ -1,4 +1,4 @@
-
+//TO DO: coins to unlock
 import java.applet.Applet;
 import java.applet.AudioClip;
 import java.awt.Canvas;
@@ -406,7 +406,7 @@ public class Mazerush extends JFrame {
 		while (current_maze > 0) {
 			// inner kernel loop starts here
 
-			while (objectupdatetick > 0) {
+			if (objectupdatetick > 0) {
 				objectupdatetick--;
 				player = update_objects(maze, player);
 
@@ -468,7 +468,7 @@ public class Mazerush extends JFrame {
 					System.out.println(e);
 
 				}
-				if (checkIfHighscore(player.completedtime, scoreArrays)) {
+				if (checkIfHighscore(getScore(player.completedtime,player.coinsCollected), scoreArrays)) {
 					String initials = enter_highscores(backbuffer, buffer, player, rusherList);
 					if (initials != null) {
 						scoreArrays.times[9] = player.completedtime;
@@ -1143,7 +1143,7 @@ public class Mazerush extends JFrame {
 
 		// JSONObject mazeshigh = new JSONObject();
 		for (int i = 0; i < 10; i++) {
-			times.add(getScore(scoreArrays, i));
+			times.add(scoreArrays.times[i]);
 			initials.add(scoreArrays.initials[i]);
 			pows.add(scoreArrays.pows[i]);
 			coins.add(scoreArrays.coins[i]);
@@ -1219,8 +1219,8 @@ public class Mazerush extends JFrame {
 		}
 	}
 
-	public static boolean checkIfHighscore(long completedtime, ScoreArrays scoreArrays) {
-		if (completedtime < getScore(scoreArrays, 9))
+	public static boolean checkIfHighscore(long score, ScoreArrays scoreArrays) {
+		if (score < getScore(scoreArrays, 9))
 			return (true);
 		return (false);
 	}
@@ -1305,10 +1305,13 @@ public class Mazerush extends JFrame {
 		}
 	}
 
-	public static long getScore(ScoreArrays scoreArrays, int index){
-		return(scoreArrays.times[index] - scoreArrays.coins[index]*coinreward);
-	}
-	
+    public static long getScore(ScoreArrays scoreArrays, int index){
+ 	   return(scoreArrays.times[index] - scoreArrays.coins[index]*coinreward*1000);
+     }
+    public static long getScore(long time, int coins){
+ 	   return(time - coins*coinreward*0x8000);
+     }
+ 	
 	static int partition(ScoreArrays scoreArrays, int left, int right)
 
 	{
