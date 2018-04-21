@@ -156,6 +156,7 @@ public class Mazerush extends JFrame {
 	}
 	static class Rusher {
 		BufferedImage spritesheet = null;
+		String titleTag = null;
 		int price = 0;
 		String name = "none";
 		{}
@@ -1190,7 +1191,7 @@ public class Mazerush extends JFrame {
 			JSONObject mazeshigh = new JSONObject();
 			for (int i = 0; i < 10; i++) {
 				times.add(new Long((rnd.nextLong() & 0xffff) + 0x8000));
-				coins.add(new Long(rnd.nextLong() & 0x1f));
+				coins.add(new Long(0L));
 				initials.add("bot");
 				pows.add(new String(""));
 
@@ -1274,7 +1275,8 @@ public class Mazerush extends JFrame {
     		    xpos_initials = xpos_rank + 44,
     		    xpos_coins = xpos_initials + 56,
     		    xpos_time = xpos_coins + 44,
-    		    xpos_width = xpos_time + 64;
+    		    xpos_score = xpos_time + 80,
+    		    xpos_width = xpos_score + 80;
     			
 		// print lasths
 		sorthighscores(scoreArrays);
@@ -1287,8 +1289,10 @@ public class Mazerush extends JFrame {
 		graphics.fillRect(hsx , hsy , hsx + xpos_width, ystep * 12);
 		graphics.setColor(Color.yellow);
 		graphics.drawString(String.format("HIGHSCORES"), hsx, hsy + ystep);
+		int totalCoins = 0;
+		int printy = 0;
 		for (int index = 0; index < 10; index++) {
-			int printy = starty + ystep * index;
+			printy = starty + ystep * index;
 			// String temp =(String)scores.get(index);
 			// long time = Long.parseLong(temp);
 			graphics.setColor(Color.blue);
@@ -1299,10 +1303,17 @@ public class Mazerush extends JFrame {
 				graphics.setColor(Color.red);
 			else
 				graphics.setColor(Color.white);
+			int coins = scoreArrays.coins[index];
+			totalCoins += coins;
 			graphics.drawString(String.format("%s", scoreArrays.coins[index]), hsx + xpos_coins, printy);
 			graphics.drawString(String.format("%s", scoreArrays.initials[index]), hsx + xpos_initials, printy);
 			graphics.drawString(String.format("%d.%02d", time / 1000, time % 1000 / 10), hsx + xpos_time, printy);
+			long score = getScore(scoreArrays, index);
+			graphics.setColor(Color.PINK);
+			graphics.drawString(String.format("%d.%02d", score / 1000, score % 1000 / 10), hsx + xpos_score, printy);
 		}
+		printy += ystep;
+		graphics.drawString(String.format("%s", totalCoins), hsx, printy);
 	}
 
     public static long getScore(ScoreArrays scoreArrays, int index){
@@ -1451,7 +1462,7 @@ public class Mazerush extends JFrame {
 
 		for (int i = 0; i < entries.getLength(); i++) {
 			IIOMetadataNode node = (IIOMetadataNode) entries.item(i);
-			System.out.println("PNGvalue="+node.getAttribute("value"));
+			//System.out.println("PNGvalue="+node.getAttribute("value"));
 			if (node.getAttribute("keyword").equals(key)) {
 				return node.getAttribute("value");
 			}
@@ -1495,8 +1506,9 @@ public class Mazerush extends JFrame {
 				Rusher tempRusher = new Rusher();
 				
 				tempRusher.spritesheet = ImageIO.read(rusherFile);
+				tempRusher.titleTag = readPNGchunk(rusherFile, "Title");
 				tempRusher.name = fname;
-				System.out.println(tempRusher);
+				System.out.println(tempRusher.name + "  Title=" + tempRusher.titleTag);
 				
 				rushers.add(tempRusher);
 			}
@@ -1525,6 +1537,20 @@ public class Mazerush extends JFrame {
 					player.player_facing_direction * 16, player.spritesheet_player_width,
 					player.spritesheet_player_height);
 			graphics.drawImage(player_img, x, y, player.player_width, player.player_height, null);
+			if (rusher.titleTag != null) {
+				String title = rusher.titleTag.toLowerCase();
+				int coinsIndex = rusher.titleTag.toLowerCase().indexOf("coins=");
+				if (coinsIndex<0) System.out.println("No coins found for " + rusher.name);
+				else {
+					coinsIndex += 6;
+					int commaIndex = title.indexOf(",", coinsIndex);
+					if (commaIndex > 0) {
+						String coinsRequired = title.substring(coinsIndex, commaIndex);
+						graphics.drawString(coinsRequired, x, y+64);
+						//System.out.println("coins for rusher = " + coinsRequired);
+					}
+				}
+			}
 			bouncylock.x = x;
 			bouncylock.y = y;
 			drawAnimatedSprite(bouncylock, graphics);
@@ -1661,9 +1687,9 @@ public class Mazerush extends JFrame {
 				mazeSelectSpriteSelector(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
 						thumbnailheight, thumbnailwidth, bouncylock, arrow, rusherList);
 				if ((listlocation + cursory) == lastmaze)
-					displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3 / 5, 0, lasthighscoreidx);
+					displayhighscores(scoreArrays, graphics, FRAME_WIDTH / 2, 0, lasthighscoreidx);
 				else
-					displayhighscores(scoreArrays, graphics, FRAME_WIDTH * 3 / 5, 0, -1);
+					displayhighscores(scoreArrays, graphics, FRAME_WIDTH / 2, 0, -1);
 				buffer.show();
 
 			}
@@ -1972,7 +1998,7 @@ public class Mazerush extends JFrame {
 				waveangle += wavespeed;
 				if (objectupdatetick == 0)
 					framevalid = false;
-				if (objectupdatetick>0)  System.out.println("ticks =" + objectupdatetick);
+			//	if (objectupdatetick>0)  System.out.println("ticks =" + objectupdatetick);
 				//System.out.println("update end");
 				
 			}
