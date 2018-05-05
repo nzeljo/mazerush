@@ -152,7 +152,7 @@ public class Mazerush extends JFrame {
 		int coinCollisions = 0;
 		boolean clockstarted = false;
 		int rushian = 0;
-		
+		int currentMaze = 1;
 	}
 	static class Rusher {
 		BufferedImage spritesheet = null;
@@ -190,7 +190,7 @@ public class Mazerush extends JFrame {
 
 	}
 
-	class ScoreArrays {
+	static class ScoreArrays {
 		Long[] times = new Long[10];
 		int[] coins = new int[10];
 		String[] initials = new String[10];
@@ -247,7 +247,6 @@ public class Mazerush extends JFrame {
 			System.out.println(e);//Handle exception
 		}
 	    
-		int current_maze = 1;
 		// TODO File fanfare = new File("resources/fanfare1.wav");
 
 		// initialize maze database
@@ -312,22 +311,26 @@ public class Mazerush extends JFrame {
 		int lasthighscoreidx = -1;
 		List coins = new ArrayList();
 
-		// GAME KERNAL
-		// GAME KERNAL
-		// GAME KERNAL
-		while (current_maze > 0) {
-			current_maze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, current_maze, lasthighscoreidx,
+		// OUTER LOOP GAME KERNAL
+		// OUTER LOOP GAME KERNAL
+		// OUTER LOOP GAME KERNAL
+		while (player.currentMaze > 0) {
+			player.currentMaze = mazeSelect(mazelist, buffer, keyboard, mazecount, player, lasthighscoreidx,
 					scoreArrays, bouncylock, arrow, rusherList);
-			if (current_maze > 0) {
+			
+			
+			if (player.currentMaze > 0) {
+				scoreArrays = converthighscores(gethighscoretable(mazelist.get(player.currentMaze).toString()));
+					
 				Mixer mixer = getmixer("resources/Waiting for loaders.mod");
 				playsong(mixer);
-				doMazeRun(current_maze, player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d, coins, rusherList);
+				doMazeRun(player, mazelist, maze, scoreArrays, backbuffer, buffer, g2d, coins, rusherList);
 				mixer.stopPlayback();
-			} else if (current_maze < 0) {
+			} else if (player.currentMaze < 0) {
 				// ------------------------------------POW TEST CODE
 				// ----------------
-				current_maze *= -1;
-				String maze_name = mazelist.get(current_maze).toString();
+				player.currentMaze *= -1;
+				String maze_name = mazelist.get(player.currentMaze).toString();
 				JSONObject hstable = (JSONObject) gethighscoretable(maze_name);
 
 				JSONArray maze_pow = getpow(hstable);
@@ -335,10 +338,10 @@ public class Mazerush extends JFrame {
 				if (maze_pow != null) {
 					if (maze_pow.get(0) != null) {
 						String mazepowstring = (String) maze_pow.get(0);
-						// getmazeruntime(mazepowstring, current_maze, player,
+						// getmazeruntime(mazepowstring, player.currentMaze, player,
 						// mazelist, maze, scoreArrays);
 						System.out.println(
-								getmazeruntime(mazepowstring, current_maze, player, mazelist, maze, scoreArrays));
+								getmazeruntime(mazepowstring, player, mazelist, maze, scoreArrays));
 						player.maze_completed = false;
 					}
 				}
@@ -346,7 +349,7 @@ public class Mazerush extends JFrame {
 		}
 	}
 
-	public void initmazerun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays) {
+	public void initmazerun(Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays) {
 		player.player_x = maze_zoom;
 		player.player_y = maze_zoom;
 		player.player_moving_direction = 0;
@@ -355,13 +358,13 @@ public class Mazerush extends JFrame {
 		player.maze_completed = false;
 		maze.maze_x = 0; // all mazes start at 0,0
 		maze.maze_y = 0; // could change so that we look for the mazeorigincolor
-		maze.maze_img = enter_maze(current_maze, mazelist, scoreArrays);
+		maze.maze_img = enter_maze(player, mazelist, scoreArrays);
 		maze.maze_pixel_width = maze.maze_img.getWidth();
 		maze.maze_pixel_height = maze.maze_img.getHeight();
 		player.clockstarted = false;
 	}
 
-	public long getmazeruntime(String maze_pow, int current_maze, Player player, JSONArray mazelist, Maze maze,
+	public long getmazeruntime(String maze_pow, Player player, JSONArray mazelist, Maze maze,
 			ScoreArrays scoreArrays) {
 
 		if (maze_pow.length() > 0) {
@@ -370,14 +373,14 @@ public class Mazerush extends JFrame {
 			player.rle = maze_pow;
 		} else
 			return (-1);
-		initmazerun(current_maze, player, mazelist, maze, scoreArrays);
+		initmazerun(player, mazelist, maze, scoreArrays);
 		while (!player.maze_completed) { // TODO find a condition
 			player = update_objects(maze, player);
 		}
 		return (player.completedtime);
 	}
 
-	public void doMazeRun(int current_maze, Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays,
+	public void doMazeRun(Player player, JSONArray mazelist, Maze maze, ScoreArrays scoreArrays,
 			Graphics backbuffer, BufferStrategy buffer, Graphics2D g2d, List coins, List rusherList) {
 
 		boolean fanfareplaying = false;
@@ -385,12 +388,12 @@ public class Mazerush extends JFrame {
 		File fanfare = new File("resources/fanfare1.wav");
 		int lasthighscoreidx = -1;
 
-		if (current_maze != 0) {
+		if (player.currentMaze != 0) {
 			player.powplayback_enabled = false; // default
-			if (current_maze < 0) {
-				current_maze *= -1;
+			if (player.currentMaze < 0) {
+				player.currentMaze *= -1;
 			}
-			initmazerun(current_maze, player, mazelist, maze, scoreArrays);
+			initmazerun(player, mazelist, maze, scoreArrays);
 			coins.clear();
 			placeCoins(coins, maze);
 			objectupdatetick = 0;
@@ -403,8 +406,7 @@ public class Mazerush extends JFrame {
 		File coin_collected_sound = new File("resources/135936__bradwesson__collectcoin.wav");
 		player.coinsCollected = 0;
 		player.coinCollisions = 0;
-
-		while (current_maze > 0) {
+		while (player.currentMaze > 0) {
 			// inner kernel loop starts here
 
 			if (objectupdatetick > 0) {
@@ -477,7 +479,7 @@ public class Mazerush extends JFrame {
 						scoreArrays.initials[9] = initials;
 						scoreArrays.pows[9] = player.rle;
 						sorthighscores(scoreArrays);
-						savehighscores(mazelist.get(current_maze).toString(), scoreArrays);
+						savehighscores(mazelist.get(player.currentMaze).toString(), scoreArrays);
 						lasthighscoreidx = findhighscore(scoreArrays, player.completedtime, initials);
 					}
 				}
@@ -490,7 +492,7 @@ public class Mazerush extends JFrame {
 				break;
 			// Should we exit?
 			if (keyboard.keyDownOnce(KeyEvent.VK_ESCAPE)) {
-				current_maze = 0;
+				player.currentMaze = 0;
 				break;
 			}
 
@@ -1226,7 +1228,8 @@ public class Mazerush extends JFrame {
 		return (false);
 	}
 
-	public static void converthighscores(JSONObject mazescores, ScoreArrays scoreArrays) {
+	public static ScoreArrays converthighscores(JSONObject mazescores) {
+		ScoreArrays scoreArrays = new ScoreArrays();
 		JSONArray times = (JSONArray) mazescores.get("times");
 		JSONArray initials = (JSONArray) mazescores.get("initials");
 		JSONArray pows = (JSONArray) mazescores.get("pows");
@@ -1246,6 +1249,7 @@ public class Mazerush extends JFrame {
 			scoreArrays.coins[index] = coinL.intValue();
 
 		}
+		return scoreArrays;
 	}
 
 	public static JSONArray getpow(JSONObject mazescores) {
@@ -1320,7 +1324,7 @@ public class Mazerush extends JFrame {
  	   return(scoreArrays.times[index] - scoreArrays.coins[index]*coinreward*1000);
      }
     public static long getScore(long time, int coins){
- 	   return(time - coins*coinreward*0x8000);
+ 	   return(time - coins*coinreward*1000);
      }
  	
 	static int partition(ScoreArrays scoreArrays, int left, int right)
@@ -1521,7 +1525,7 @@ public class Mazerush extends JFrame {
 		return(rushers);
 	}
 	//title=zombie.png,coins=215,music=zombie.mod,acceleration=8,bounce=0,deceleration=8,maxspeed=8
-	public static void mazeSelectSpriteSelector(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
+	public static void mazeSelectSpriteSelector(JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth, AnimatedSprite bouncylock, AnimatedSprite arrow, List rusherList) {
 		player.player_moving_direction = pleft;
 		player.player_x = thumbnailwidth * thumbnailzoom;
@@ -1563,6 +1567,34 @@ public class Mazerush extends JFrame {
 		bouncylock.animationFrame ++;
 		arrow.animationFrame ++;
 		
+	}
+	public static int getRushianPrice(int rushian, List rusherList){
+		Rusher rusher = (Rusher) rusherList.get(rushian);
+		int coinsRequired = -1;
+		if (rusher.titleTag != null) {
+			String title = rusher.titleTag.toLowerCase();
+			int coinsIndex = rusher.titleTag.toLowerCase().indexOf("coins=");
+			if (coinsIndex<0) System.out.println("No coins found for " + rusher.name);
+			else {
+				coinsIndex += 6;
+				int commaIndex = title.indexOf(",", coinsIndex);
+				if (commaIndex > 0) {
+				//	Long coinsRequiredL = (Long) (title.substring(coinsIndex, commaIndex));
+					coinsRequired = Integer.parseInt(title.substring(coinsIndex, commaIndex));
+					//System.out.println("coins for rusher = " + coinsRequired);
+				}
+			}
+		}
+		return coinsRequired;
+	}
+	public static int getTotalCoins(JSONArray mazelist, Player player){
+		int currentRushian = player.rushian;
+		ScoreArrays scoreArrays = converthighscores(gethighscoretable(mazelist.get(player.currentMaze).toString()));
+		int totalCoins = 0;
+		for (int i=0;i<10;i++) {
+			totalCoins += scoreArrays.coins[i];
+		}
+		return totalCoins;
 	}
 	public static void drawBouncyLock(int x, int y, Graphics graphics){
 		BufferedImage lockImg = null;
@@ -1635,19 +1667,9 @@ public class Mazerush extends JFrame {
 	}
 
 	public static int mazeSelect(JSONArray mazelist, BufferStrategy buffer, KeyboardInput keyboard, int mazecount,
-			Player player, int listlocation, int lasthighscoreidx, ScoreArrays scoreArrays, AnimatedSprite bouncylock, AnimatedSprite arrow, List rusherList) {
-
-		//testcode        public void readPNGchunk(File fileIn, String keyword) throws IOException {
-		try {
-			File file = new File("rushians/zombie.png");
-
-			System.out.println("zombie.png Title = " + readPNGchunk(file, "Title"));
-
-		}
-		catch (IOException e) {
-			System.out.println(e);
-		}
-		int lastmaze = listlocation; // storing last maze so we can use for
+			Player player, int lasthighscoreidx, ScoreArrays scoreArrays, 
+			AnimatedSprite bouncylock, AnimatedSprite arrow, List rusherList) {
+		int lastmaze = player.currentMaze; // storing last maze so we can use for
 		// highscore highlight
 		int thumbnailheight = FRAME_HEIGHT / maze_zoom;
 		// int thumbnailheight = 16;
@@ -1667,7 +1689,8 @@ public class Mazerush extends JFrame {
 		 * obt.scheduleAtFixedRate(objectupdatetimer, mazeselect_bandwidth,
 		 * mazeselect_bandwidth);
 		 */
-		converthighscores(gethighscoretable(mazelist.get(listlocation + cursory).toString()), scoreArrays);
+		scoreArrays = converthighscores(
+				gethighscoretable(mazelist.get(player.currentMaze + cursory).toString()));
 		Graphics graphics = buffer.getDrawGraphics();
 		objectupdatetick = 0;
 
@@ -1679,14 +1702,14 @@ public class Mazerush extends JFrame {
 				graphics.setColor(Color.BLACK);
 				graphics.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 				player.player_y = cursory * thumbnailzoom * thumbnailheight;
-				displayMazeThumbs(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom, thumbnailheight,
+				displayMazeThumbs(player.currentMaze, mazelist, graphics, mazecount, player, thumbnailzoom, thumbnailheight,
 						thumbnailwidth);
 
-				mazeSelectPlayersprite(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
+				mazeSelectPlayersprite(player.currentMaze, mazelist, graphics, mazecount, player, thumbnailzoom,
 						thumbnailheight, thumbnailwidth, rusherList);
-				mazeSelectSpriteSelector(listlocation, mazelist, graphics, mazecount, player, thumbnailzoom,
+				mazeSelectSpriteSelector(mazelist, graphics, mazecount, player, thumbnailzoom,
 						thumbnailheight, thumbnailwidth, bouncylock, arrow, rusherList);
-				if ((listlocation + cursory) == lastmaze)
+				if ((player.currentMaze + cursory) == lastmaze)
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH / 2, 0, lasthighscoreidx);
 				else
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH / 2, 0, -1);
@@ -1696,83 +1719,42 @@ public class Mazerush extends JFrame {
             keyboard.poll();
 			if (keyboard.keyDownOnce(KeyEvent.VK_W) || keyboard.keyDownOnce(KeyEvent.VK_UP)) {
 				cursory -= 1;
-				converthighscores(gethighscoretable(mazelist.get(listlocation + cursory).toString()), scoreArrays);
+				scoreArrays = converthighscores(gethighscoretable(mazelist.get(player.currentMaze + cursory).toString()));
 			}
 			if ((keyboard.keyDownOnce(KeyEvent.VK_S) || keyboard.keyDownOnce(KeyEvent.VK_DOWN))
-					&& (listlocation + cursory) < (mazecount - 1)) {
+					&& (player.currentMaze + cursory) < (mazecount - 1)) {
 				cursory += 1;
-				converthighscores(gethighscoretable(mazelist.get(listlocation + cursory).toString()), scoreArrays);
+				scoreArrays = converthighscores(gethighscoretable(mazelist.get(player.currentMaze + cursory).toString()));
 			}
 			if (cursory >= (FRAME_HEIGHT / (thumbnailheight * thumbnailzoom))) {
 				cursory -= 1;
-				if (listlocation < mazecount - 1)
-					listlocation++;
+				if (player.currentMaze < mazecount - 1)
+					player.currentMaze++;
 			}
 			if (cursory < 0) {
 				cursory += 1;
-				if (listlocation > 1)
-					listlocation--;
+				if (player.currentMaze > 1)
+					player.currentMaze--;
 			}
 			if ((keyboard.keyDownOnce(KeyEvent.VK_LEFT) || keyboard.keyDownOnce(KeyEvent.VK_A)) && player.rushian > 0)
+				if(getTotalCoins(mazelist, player) >= getRushianPrice(player.rushian - 1, rusherList))
 				player.rushian --;
 			if ((keyboard.keyDownOnce(KeyEvent.VK_RIGHT) || keyboard.keyDownOnce(KeyEvent.VK_D)) && player.rushian <= (rusherList.size() - 2))
+				if(getTotalCoins(mazelist, player) >= getRushianPrice(player.rushian + 1, rusherList))
 				player.rushian ++; //TODO rusherlist size is a liar
 		}
+		
 		if (keyboard.keyDownOnce(KeyEvent.VK_ENTER)) {
-			selectTransition3D(buffer, listlocation, cursory, thumbnailzoom, thumbnailheight, thumbnailwidth, mazelist);
-			return (listlocation + cursory);
+			
+			selectTransition3D(buffer, player.currentMaze, cursory, thumbnailzoom, thumbnailheight, thumbnailwidth, mazelist);
+			return (player.currentMaze + cursory);
 		} else if (keyboard.keyDownOnce(KeyEvent.VK_R)) {
-			return ((listlocation + cursory) * -1);
+			return ((player.currentMaze + cursory) * -1);
 		} else
 			return (0); // if escape pressed
 	}
 
-	public static void selectTransition(BufferStrategy buffer, int listlocation, int cursory, int thumbnailzoom,
-			int thumbnailheight, int thumbnailwidth, JSONArray mazelist) {
-		float tframes = 32;
-		float x1start = 0;
-		float y1start = cursory * thumbnailheight * thumbnailzoom;
-		float x2start = thumbnailwidth * thumbnailzoom;
-		float y2start = y1start + thumbnailheight * thumbnailzoom;
-		float x1end = 0;
-		float y1end = 0;
-		float x2end = FRAME_WIDTH;
-		float y2end = FRAME_HEIGHT;
-		float x1delta = (x1end - x1start) / tframes;
-		float y1delta = (y1end - y1start) / tframes;
-		float x2delta = (x2end - x2start) / tframes;
-		float y2delta = (y2end - y2start) / tframes;
-		float x1 = x1start;
-		float y1 = y1start;
-		float x2 = x2start;
-		float y2 = y2start;
-		BufferedImage mazeimage = null;
-		try {
-			mazeimage = ImageIO.read(new File("mazes/" + mazelist.get(listlocation + cursory).toString()));
-		} catch (IOException e) {
-			System.out.println(e);
-		}
-		for (int i = 1; i < tframes; i++) {
-			Graphics graphics = buffer.getDrawGraphics();
-			graphics.drawImage(mazeimage.getSubimage(0, 0, thumbnailwidth, thumbnailheight), (int) x1, (int) y1,
-					(int) (x2 - x1), (int) (y2 - y1), null);
-			x1 += x1delta;
-			y1 += y1delta;
-			x2 += x2delta;
-			y2 += y2delta;
-			buffer.show();
-			try {
-
-				Thread.sleep(KernalSleepTime);
-
-			} catch (InterruptedException e) {
-				System.out.println(e);
-
-			}
-		}
-	}
-
-	public static void selectTransition3D(BufferStrategy buffer, int listlocation, int cursory, int thumbnailzoom,
+	public static void selectTransition3D(BufferStrategy buffer, int currentMaze, int cursory, int thumbnailzoom,
 			int thumbnailheight, int thumbnailwidth, JSONArray mazelist) {
 		float taccel = (float) 1.07;
 		float x1start = 0;
@@ -1793,7 +1775,7 @@ public class Mazerush extends JFrame {
 		float y2 = y2start;
 		BufferedImage mazeimage = null;
 		try {
-			mazeimage = ImageIO.read(new File("mazes/" + mazelist.get(listlocation + cursory).toString()));
+			mazeimage = ImageIO.read(new File("mazes/" + mazelist.get(currentMaze + cursory).toString()));
 		} catch (IOException e) {
 		}
 		float dist = (float) 0.01;
@@ -1817,23 +1799,14 @@ public class Mazerush extends JFrame {
 			}
 		}
 	}
-
-	public static void showmazes(int listlocation, BufferedImage[] mazeimages, Graphics screen) {
-		int gap = FRAME_WIDTH / 7;
-		int y = FRAME_HEIGHT / 2;
-		screen.drawImage(mazeimages[listlocation], gap, y, 64, 64, null);
-		screen.drawImage(mazeimages[listlocation + 1], gap * 3, y, 64, 64, null);
-		screen.drawImage(mazeimages[listlocation + 2], gap * 5, y, 64, 64, null);
-	}
-
-	public static BufferedImage enter_maze(int current_maze, JSONArray mazelist, ScoreArrays scoreArrays) {
+	public static BufferedImage enter_maze(Player player, JSONArray mazelist, ScoreArrays scoreArrays) {
 		BufferedImage mazeimage = null;
 		try {
-			mazeimage = ImageIO.read(new File("mazes/" + mazelist.get(current_maze).toString()));
+			mazeimage = ImageIO.read(new File("mazes/" + mazelist.get(player.currentMaze).toString()));
 		} catch (IOException e) {
 		}
 
-		converthighscores(gethighscoretable(mazelist.get(current_maze).toString()), scoreArrays);
+		scoreArrays = converthighscores(gethighscoretable(mazelist.get(player.currentMaze).toString()));
 		return (mazeimage);
 	}
 	public static class Sound {
