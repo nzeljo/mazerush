@@ -181,7 +181,7 @@ public class Mazerush extends JFrame {
 				System.out.println(e);
 			}
 		}
-
+	
 		int x = -1, y = -1, center_w = spritesheet.getWidth(null) / spritesheeth,
 				center_h = spritesheet.getHeight(null) / spritesheetv, width = center_w * 2, height = center_h * 2,
 
@@ -189,7 +189,35 @@ public class Mazerush extends JFrame {
 		boolean collected = false;
 
 	}
-
+	static class Saying {
+		long expires;
+		String text;
+		int x;
+		int y;
+		Color fgcol = Color.black;
+		Color bkcol = Color.white;
+		long startTime;
+		long flash;
+		public Saying (long ttl, String sayText, int sayX, int sayY, Color sayFgcol, Color sayBkcol) {
+			expires=System.currentTimeMillis() + ttl;
+			text=sayText;
+			x=sayX;
+			y=sayY;
+			fgcol=sayFgcol;
+			bkcol=sayBkcol;
+			startTime=0;
+			}
+		public Saying (long ttl, String sayText, int sayX, int sayY, Color sayFgcol, Color sayBkcol, long sayFlash) {
+			expires=System.currentTimeMillis() + ttl;
+			text=sayText;
+			x=sayX;
+			y=sayY;
+			fgcol=sayFgcol;
+			bkcol=sayBkcol;
+			flash=sayFlash;
+			startTime=System.currentTimeMillis();
+		}
+	}
 	static class ScoreArrays {
 		Long[] times = new Long[10];
 		int[] coins = new int[10];
@@ -1535,8 +1563,8 @@ public class Mazerush extends JFrame {
 		BufferedImage player_img = null;
 		int y = 325;
 		int x = 400;
-		for (int i = 0; i < rusherList.size(); i++) {
-			Rusher rusher = (Rusher) rusherList.get(i);
+		for (int rushian_number = 0; rushian_number < rusherList.size(); rushian_number++) {
+			Rusher rusher = (Rusher) rusherList.get(rushian_number);
 			player_img = rusher.spritesheet.getSubimage(player.animationFrame / AnimationSpeed * 16,
 					player.player_facing_direction * 16, player.spritesheet_player_width,
 					player.spritesheet_player_height);
@@ -1557,7 +1585,8 @@ public class Mazerush extends JFrame {
 			}
 			bouncylock.x = x;
 			bouncylock.y = y;
-			drawAnimatedSprite(bouncylock, graphics);
+			if(getTotalCoins(mazelist, player) <= getRushianPrice(rushian_number, rusherList))
+				drawAnimatedSprite(bouncylock, graphics);
 			x += 40;
 			
 			arrow.x = 400 + player.rushian * 40;
@@ -1693,9 +1722,11 @@ public class Mazerush extends JFrame {
 				gethighscoretable(mazelist.get(player.currentMaze + cursory).toString()));
 		Graphics graphics = buffer.getDrawGraphics();
 		objectupdatetick = 0;
-
-		while (!(keyboard.keyDown(KeyEvent.VK_ENTER) || keyboard.keyDown(KeyEvent.VK_ESCAPE)
-				|| keyboard.keyDown(KeyEvent.VK_R))) {
+		boolean mazeSelectPending = true;
+		int returnValue = 0;
+		Saying saying = null;
+		while (mazeSelectPending){
+		
 			if (objectupdatetick > 0) {
 				objectupdatetick --;
 
@@ -1709,10 +1740,13 @@ public class Mazerush extends JFrame {
 						thumbnailheight, thumbnailwidth, rusherList);
 				mazeSelectSpriteSelector(mazelist, graphics, mazecount, player, thumbnailzoom,
 						thumbnailheight, thumbnailwidth, bouncylock, arrow, rusherList);
+				
 				if ((player.currentMaze + cursory) == lastmaze)
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH / 2, 0, lasthighscoreidx);
 				else
 					displayhighscores(scoreArrays, graphics, FRAME_WIDTH / 2, 0, -1);
+				
+				processSaying(saying,graphics);
 				buffer.show();
 
 			}
@@ -1737,21 +1771,28 @@ public class Mazerush extends JFrame {
 					player.currentMaze--;
 			}
 			if ((keyboard.keyDownOnce(KeyEvent.VK_LEFT) || keyboard.keyDownOnce(KeyEvent.VK_A)) && player.rushian > 0)
-				if(getTotalCoins(mazelist, player) >= getRushianPrice(player.rushian - 1, rusherList))
 				player.rushian --;
 			if ((keyboard.keyDownOnce(KeyEvent.VK_RIGHT) || keyboard.keyDownOnce(KeyEvent.VK_D)) && player.rushian <= (rusherList.size() - 2))
-				if(getTotalCoins(mazelist, player) >= getRushianPrice(player.rushian + 1, rusherList))
 				player.rushian ++; //TODO rusherlist size is a liar
+			if (keyboard.keyDownOnce(KeyEvent.VK_ENTER))
+				if (getTotalCoins(mazelist, player) >= getRushianPrice(player.rushian, rusherList)){
+					selectTransition3D(buffer, player.currentMaze, cursory, thumbnailzoom, thumbnailheight, thumbnailwidth, mazelist);
+					returnValue = (player.currentMaze + cursory);
+					mazeSelectPending = false;
+				} else {
+				 saying = new Saying(2000,"Not enough coins!",340,300,Color.red,Color.black,250);
+				}
+			if (keyboard.keyDownOnce(KeyEvent.VK_ESCAPE)) {
+				returnValue = 0;
+				mazeSelectPending = false;
+			}
+			if (keyboard.keyDownOnce(KeyEvent.VK_R)) {
+				returnValue = (player.currentMaze + cursory) * -1;
+				mazeSelectPending = false;
+				
+			}
 		}
-		
-		if (keyboard.keyDownOnce(KeyEvent.VK_ENTER)) {
-			
-			selectTransition3D(buffer, player.currentMaze, cursory, thumbnailzoom, thumbnailheight, thumbnailwidth, mazelist);
-			return (player.currentMaze + cursory);
-		} else if (keyboard.keyDownOnce(KeyEvent.VK_R)) {
-			return ((player.currentMaze + cursory) * -1);
-		} else
-			return (0); // if escape pressed
+		return (returnValue);
 	}
 
 	public static void selectTransition3D(BufferStrategy buffer, int currentMaze, int cursory, int thumbnailzoom,
@@ -1961,6 +2002,7 @@ public class Mazerush extends JFrame {
 		playsong(mixer);
 		boolean framevalid = false;
 		objectupdatetick = 0;
+		Saying saying = new Saying(5L,"Welcome Rushian!",10,10,Color.blue,Color.black,15);
 		while (!keyboard.poll()) {
 			// _update
 			while (objectupdatetick > 0) {
@@ -1983,7 +2025,8 @@ public class Mazerush extends JFrame {
 					
 					frontGraphics.drawImage(backBuffer, 0, 0, null);
 					frontGraphics.drawImage(splashtext_buffer, 0, (int) yoffset, null);
-
+					processSaying(saying,frontGraphics);
+					
 									if (!frontBuffer.contentsLost())
 										frontBuffer.show();
 					
@@ -2006,7 +2049,23 @@ public class Mazerush extends JFrame {
 		while (keyboard.poll()) {} // wait for key to be released
 		mixer.stopPlayback();
 	}
-	
+	public static void processSaying(Saying saying, Graphics graphics){
+		if (saying == null)
+			return;
+		
+		if(System.currentTimeMillis() < saying.expires) {
+		
+			graphics.setColor(saying.fgcol);
+			if (saying.startTime == 0)
+				graphics.drawString(saying.text, saying.x, saying.y);
+			else {
+				Long flashchunk = ((saying.startTime - System.currentTimeMillis() ) / saying.flash);
+				int flashstat = flashchunk.intValue() % 2;
+				if (flashstat == 0)
+					graphics.drawString(saying.text, saying.x, saying.y);
+			}
+		}
+	}
 	
 	public static Mixer getmixer(String fname){
 		Mixer mixer = null;
