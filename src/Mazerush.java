@@ -426,7 +426,7 @@ public class Mazerush extends JFrame {
 			placeCoins(coins, maze);
 			objectupdatetick = 0;
 		}
-		Font timeFont = new Font("SansSerif", Font.BOLD, 20);
+		Font timeFont = gameFont.deriveFont(16f);
 		int maze_overscan_x = 0;
 		int maze_overscan_y = 0;
 		boolean FrameValid = false;
@@ -1670,8 +1670,8 @@ public class Mazerush extends JFrame {
 
 	public static void displayMazeThumbs(int topmaze, JSONArray mazelist, Graphics graphics, int mazecount,
 			Player player, int thumbnailzoom, int thumbnailheight, int thumbnailwidth) {
-		Font MazeSelectFont = new Font(Font.MONOSPACED, Font.PLAIN, 20);
-		MazeSelectFont =  gameFont.deriveFont(16f);
+		//Font MazeSelectFont = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+		Font MazeSelectFont =  gameFont.deriveFont(16f);
 
 		graphics.setFont(MazeSelectFont);
 		graphics.setColor(Color.white);
@@ -2003,15 +2003,16 @@ public class Mazerush extends JFrame {
 		boolean framevalid = false;
 		objectupdatetick = 0;
 		Saying saying = new Saying(5L,"Welcome Rushian!",10,10,Color.blue,Color.black,15);
+		// splashKernel
 		while (!keyboard.poll()) {
 			// _update
-			while (objectupdatetick > 0) {
+			if (objectupdatetick > 0) {
 				//System.out.println("update start");
 				
 				objectupdatetick--;
 				yoffset = Math.sin(waveangle) * splashTextWaveHeight;
 				waveangle += wavespeed;
-				if (objectupdatetick == 0)
+	//			if (objectupdatetick == 0)
 					framevalid = false;
 			//	if (objectupdatetick>0)  System.out.println("ticks =" + objectupdatetick);
 				//System.out.println("update end");
