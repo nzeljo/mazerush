@@ -11,6 +11,8 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.KeyEvent;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -432,6 +434,16 @@ public class Mazerush extends JFrame {
 		boolean FrameValid = false;
 		File footsteps = new File("resources/footstep3.wav");
 		File coin_collected_sound = new File("resources/135936__bradwesson__collectcoin.wav");
+		AnimatedSprite coin = new AnimatedSprite();
+		coin.numFrames = 4;
+		try{
+			URL coinURL = new URL("file:resources/coin.png");
+			coin.spritesheet = ImageIO.read(coinURL);
+
+		}
+		catch (IOException e){
+			System.out.println(e);
+		}
 		player.coinsCollected = 0;
 		player.coinCollisions = 0;
 		while (player.currentMaze > 0) {
@@ -554,16 +566,7 @@ public class Mazerush extends JFrame {
 					draw_coins(backbuffer, coins, maze);
 					draw_player(backbuffer, maze, player, rusherList);
 					backbuffer.setFont(timeFont);
-					backbuffer.setColor(Color.white);
-					backbuffer.fillRect(5, 20, 185, 25);
-					backbuffer.setColor(Color.black);
-					backbuffer.drawString(
-							String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000),
-							10, 40); // TODO move to other side of screen if
-					// player is on top of it
-					backbuffer.drawString(String.format("FPS: %d", currentFPS), 10, 80);
-					backbuffer.setColor(Color.red);
-					backbuffer.drawString(String.format("Coins: %d", player.coinsCollected), 10, 120);
+					drawStatus(backbuffer, player, coin);
 					if (!buffer.contentsLost())
 						buffer.show();
 					FrameValid = true; // Frame limiting
@@ -584,7 +587,33 @@ public class Mazerush extends JFrame {
 		}
 
 	}
-
+	public void drawStatus(Graphics backbuffer, Player player, AnimatedSprite coin){
+		final int statusypos = 25, timexpos = 10, coinsxpos = 210, fpsxpos = 320;
+	//	backbuffer.setColor(Color.white);
+	//	backbuffer.fillRect(5, 20, 185, 25);
+		String timeString = String.format("Time: %d.%02d", player.completedtime / 1000, player.completedtime % 1000);
+		backbuffer.setColor(Color.white);
+		
+		for(int fy=-1;fy<=1;fy++)
+			for(int fx=-1;fx<=1;fx++)
+				backbuffer.drawString(timeString, timexpos+fx, statusypos+fy);
+		
+			
+		backbuffer.setColor(Color.black);
+				
+		backbuffer.drawString(timeString, timexpos, statusypos); // TODO move to other side of screen if
+		// player is on top of it
+		
+	      
+		backbuffer.drawString(String.format("FPS: %d", currentFPS), fpsxpos, statusypos);
+		coin.x=coinsxpos;
+		coin.y=3;
+		coin.animationFrame ++;
+		drawAnimatedSprite(coin, backbuffer);
+		backbuffer.setColor(Color.yellow);
+		backbuffer.drawString(String.format(": %d", player.coinsCollected), coinsxpos+32, statusypos);
+		
+	}
 	public Player powrecord(Player player) {
 		char powdir = (char) (65 + player.player_moving_direction);
 		char coindir = (char) 'Z';
